@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZeroTouch MicroPolicy</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="data:application/json,{'name':'ZeroTouch MicroPolicy','short_name':'ZeroTouch','start_url':'./','display':'standalone','background_color':'%23f8faf8','theme_color':'%23218396'}">
+    <meta name="theme-color" content="#218396">
+</head>
+<body>
+    <!-- Navigation Header -->
+    <header class="navbar">
+        <div class="container">
+            <div class="navbar-content">
+                <div class="logo">
+                    <span class="logo-icon">⚡</span>
+                    <span class="logo-text">ZeroTouch</span>
+                </div>
+                <nav class="nav-links">
+                    <button class="nav-link" data-page="home">Home</button>
+                    <button class="nav-link" data-page="policies">Policies</button>
+                    <button class="nav-link" data-page="dashboard">Dashboard</button>
+                    <button class="nav-link" data-page="demo">Demo</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Landing/Onboarding Page -->
+    <main class="page active" id="home-page">
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h1 class="hero-title">Buy in seconds. Learn in AR. Get paid without pressing a button.</h1>
+                    <p class="hero-subtitle">Experience the future of micro-insurance with instant payouts powered by AI and blockchain technology.</p>
+                    <div class="hero-features">
+                        <div class="feature">
+                            <span class="feature-icon">⚡</span>
+                            <span>Instant Purchase</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">🔍</span>
+                            <span>AR Learning</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">🤖</span>
+                            <span>Zero-Touch Payouts</span>
+                        </div>
+                    </div>
+                    <button class="btn btn--primary btn--lg" id="get-started-btn">Get Started</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="how-it-works">
+            <div class="container">
+                <h2>How ZeroTouch Works</h2>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h3>Choose Policy</h3>
+                        <p>Select from instant micro-policies for common events</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h3>Learn in AR</h3>
+                        <p>Understand how your policy works with immersive AR</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h3>Auto Payout</h3>
+                        <p>Get paid instantly when events are detected by AI</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Policy Selection Page -->
+    <main class="page" id="policies-page">
+        <div class="container">
+            <div class="page-header">
+                <h1>Choose Your Policy</h1>
+                <p>Select instant micro-insurance for life's unexpected moments</p>
+            </div>
+            <div class="policies-grid" id="policies-grid">
+                <!-- Policies will be dynamically inserted here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- AR Explainer Page -->
+    <main class="page" id="ar-explainer-page">
+        <div class="container">
+            <div class="ar-container">
+                <div class="ar-header">
+                    <h1>Understanding Your Policy</h1>
+                    <p id="ar-policy-name">Loading policy details...</p>
+                </div>
+                <div class="ar-simulation">
+                    <div class="ar-world">
+                        <div class="ar-element" id="ar-icon">📱</div>
+                        <div class="ar-element" id="ar-sensor">🌡️</div>
+                        <div class="ar-element" id="ar-blockchain">⛓️</div>
+                        <div class="ar-element" id="ar-payout">💰</div>
+                    </div>
+                    <div class="ar-steps">
+                        <div class="ar-step active" data-step="1">
+                            <h3>Policy Activated</h3>
+                            <p>Your micro-policy is now monitoring events in real-time</p>
+                        </div>
+                        <div class="ar-step" data-step="2">
+                            <h3>Event Detection</h3>
+                            <p>AI sensors continuously monitor relevant conditions</p>
+                        </div>
+                        <div class="ar-step" data-step="3">
+                            <h3>Blockchain Verification</h3>
+                            <p>Smart contracts verify and validate trigger conditions</p>
+                        </div>
+                        <div class="ar-step" data-step="4">
+                            <h3>Instant Payout</h3>
+                            <p>Automatic compensation without any manual intervention</p>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn--primary btn--lg" id="continue-purchase-btn">Continue to Purchase</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Policy Dashboard -->
+    <main class="page" id="dashboard-page">
+        <div class="container">
+            <div class="page-header">
+                <h1>Your Policies</h1>
+                <p>Monitor your active micro-policies and payouts</p>
+            </div>
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="active-policies-count">0</div>
+                    <div class="stat-label">Active Policies</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="total-payouts">₹0</div>
+                    <div class="stat-label">Total Payouts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="response-time">0.3s</div>
+                    <div class="stat-label">Avg Response Time</div>
+                </div>
+            </div>
+            <div class="policies-list" id="user-policies">
+                <div class="empty-state">
+                    <span class="empty-icon">📋</span>
+                    <h3>No Active Policies</h3>
+                    <p>Get started by purchasing your first micro-policy</p>
+                    <button class="btn btn--primary" data-page="policies">Browse Policies</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Demo/Judge Mode -->
+    <main class="page" id="demo-page">
+        <div class="container">
+            <div class="page-header">
+                <h1>Demo Mode</h1>
+                <p>Test ZeroTouch instant payouts and fraud prevention</p>
+            </div>
+            <div class="demo-controls">
+                <h2>Trigger Events</h2>
+                <div class="demo-buttons">
+                    <button class="btn btn--outline demo-trigger" data-event="rain">
+                        <span class="demo-icon">🌧️</span>
+                        Trigger Rain Event
+                    </button>
+                    <button class="btn btn--outline demo-trigger" data-event="flight">
+                        <span class="demo-icon">✈️</span>
+                        Trigger Flight Delay
+                    </button>
+                    <button class="btn btn--outline demo-trigger" data-event="traffic">
+                        <span class="demo-icon">🚗</span>
+                        Trigger Traffic Jam
+                    </button>
+                    <button class="btn btn--outline demo-trigger fraud-btn" data-event="fake">
+                        <span class="demo-icon">⚠️</span>
+                        Attempt Fake Claim
+                    </button>
+                </div>
+            </div>
+            <div class="demo-results" id="demo-results">
+                <h2>Event Log</h2>
+                <div class="demo-log" id="demo-log">
+                    <p class="demo-placeholder">Click buttons above to simulate events and see instant responses</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>Processing...</p>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
