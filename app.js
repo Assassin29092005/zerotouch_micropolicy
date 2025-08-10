@@ -3,9 +3,13 @@ class ZeroTouchApp {
     constructor() {
         this.currentPage = 'home';
         this.selectedPolicy = null;
-        this.userPolicies = JSON.parse(localStorage.getItem('zerotouch_policies') || '[]');
+        this.userPolicies = [];
         this.arStepInterval = null;
         this.isAdminLoggedIn = localStorage.getItem('zerotouch_admin_session') === 'true';
+        this.isCustomerLoggedIn = !!localStorage.getItem('zerotouch_customer_token');
+        this.customerData = JSON.parse(localStorage.getItem('zerotouch_customer_data') || 'null');
+        this.apiBaseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
+        
         this.adminCredentials = {
             username: 'admin',
             password: 'zerotouch123'
@@ -80,21 +84,66 @@ class ZeroTouchApp {
     init() {
         this.setupEventListeners();
         this.renderPolicies();
-        this.updateDashboard();
+        this.updateCustomerUI();
         this.updateAdminUI();
+        if (this.isCustomerLoggedIn) {
+            this.loadUserPolicies();
+        }
         this.showPage('home');
     }
 
     setupEventListeners() {
+        // Get Started button - FIXED
+        const getStartedBtn = document.getElementById('get-started-btn');
+        if (getStartedBtn) {
+            getStartedBtn.addEventListener('click', () => {
+                if (this.isCustomerLoggedIn) {
+                    this.showPage('policies');
+                } else {
+                    this.showPage('customer-login');
+                }
+            });
+        }
+
         // Navigation - regular pages
         document.querySelectorAll('[data-page]').forEach(btn => {
-            if (btn.getAttribute('data-page') !== 'demo') {
+            if (!['demo', 'policies'].includes(btn.getAttribute('data-page'))) {
                 btn.addEventListener('click', (e) => {
                     const page = e.target.getAttribute('data-page');
                     this.showPage(page);
                 });
             }
         });
+
+        // Special handling for policies page
+        const policiesNavButton = document.querySelector('[data-page="policies"]');
+        if (policiesNavButton) {
+            policiesNavButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (this.isCustomerLoggedIn) {
+                    this.showPage('policies');
+                } else {
+                    this.showPage('customer-login');
+                    this.showToast('Please login to access policies', 'warning');
+                }
+            });
+        }
+
+        // Special handling for dashboard page
+        const dashboardNavButton = document.querySelector('[data-page="dashboard"]');
+        if (dashboardNavButton) {
+            dashboardNavButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (this.isCustomerLoggedIn) {
+                    this.showPage('dashboard');
+                } else {
+                    this.showPage('customer-login');
+                    this.showToast('Please login to access your dashboard', 'warning');
+                }
+            });
+        }
 
         // Special handling for demo page access
         const demoNavButton = document.querySelector('[data-page="demo"]');
@@ -111,6 +160,40 @@ class ZeroTouchApp {
             });
         }
 
+        // Customer authentication forms
+        const customerLoginForm = document.getElementById('customer-login-form');
+        if (customerLoginForm) {
+            customerLoginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleCustomerLogin();
+            });
+        }
+
+        const customerSignupForm = document.getElementById('customer-signup-form');
+        if (customerSignupForm) {
+            customerSignupForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleCustomerSignup();
+            });
+        }
+
+        // Auth switch links
+        const showSignupLink = document.getElementById('show-signup');
+        if (showSignupLink) {
+            showSignupLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showPage('customer-signup');
+            });
+        }
+
+        const showLoginLink = document.getElementById('show-login');
+        if (showLoginLink) {
+            showLoginLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showPage('customer-login');
+            });
+        }
+
         // Admin login form
         const adminForm = document.getElementById('admin-login-form');
         if (adminForm) {
@@ -124,7 +207,11 @@ class ZeroTouchApp {
         const logoutBtn = document.getElementById('logout-btn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', () => {
-                this.handleAdminLogout();
+                if (this.isCustomerLoggedIn) {
+                    this.handleCustomerLogout();
+                } else if (this.isAdminLoggedIn) {
+                    this.handleAdminLogout();
+                }
             });
         }
 
@@ -138,6 +225,11 @@ class ZeroTouchApp {
         // Policy selection
         document.addEventListener('click', (e) => {
             if (e.target.closest('.policy-card')) {
+                if (!this.isCustomerLoggedIn) {
+                    this.showToast('Please login to purchase policies', 'warning');
+                    this.showPage('customer-login');
+                    return;
+                }
                 const policyId = parseInt(e.target.closest('.policy-card').getAttribute('data-policy-id'));
                 this.selectPolicy(policyId);
             }
@@ -172,7 +264,227 @@ class ZeroTouchApp {
         });
     }
 
+    // Customer Authentication Methods
+    async handleCustomerLogin() {
+        const email = document.getElementById('customer-email').value;
+        const password = document.getElementById('customer-password').value;
+
+        this.clearFormErrors('customer-login-form');
+
+        try {
+            this.showLoading();
+            const response = await fetch(`${this.apiBaseUrl}/api/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                this.isCustomerLoggedIn = true;
+                localStorage.setItem('zerotouch_customer_token', data.token);
+                localStorage.setItem('zerotouch_customer_data', JSON.stringify(data.user));
+                this.customerData = data.user;
+
+                this.updateCustomerUI();
+                this.loadUserPolicies();
+                this.showToast('Login successful!', 'success');
+                this.showPage('dashboard');
+                document.getElementById('customer-login-form').reset();
+            } else {
+                this.showFormError('customer-login-form', data.message);
+                this.showToast(data.message, 'error');
+            }
+        } catch (error) {
+            this.showToast('Network error. Please try again.', 'error');
+            console.error('Login error:', error);
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    async handleCustomerSignup() {
+        const username = document.getElementById('signup-username').value;
+        const email = document.getElementById('signup-email').value;
+        const password = document.getElementById('signup-password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+
+        this.clearFormErrors('customer-signup-form');
+
+        // Validate passwords match
+        if (password !== confirmPassword) {
+            this.showFormError('customer-signup-form', 'Passwords do not match');
+            return;
+        }
+
+        try {
+            this.showLoading();
+            const response = await fetch(`${this.apiBaseUrl}/api/auth/signup`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, email, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                this.isCustomerLoggedIn = true;
+                localStorage.setItem('zerotouch_customer_token', data.token);
+                localStorage.setItem('zerotouch_customer_data', JSON.stringify(data.user));
+                this.customerData = data.user;
+
+                this.updateCustomerUI();
+                this.showToast('Account created successfully!', 'success');
+                this.showPage('dashboard');
+                document.getElementById('customer-signup-form').reset();
+            } else {
+                this.showFormError('customer-signup-form', data.message);
+                this.showToast(data.message, 'error');
+            }
+        } catch (error) {
+            this.showToast('Network error. Please try again.', 'error');
+            console.error('Signup error:', error);
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    handleCustomerLogout() {
+        this.isCustomerLoggedIn = false;
+        this.customerData = null;
+        this.userPolicies = [];
+        localStorage.removeItem('zerotouch_customer_token');
+        localStorage.removeItem('zerotouch_customer_data');
+        this.updateCustomerUI();
+        this.showToast('Logged out successfully', 'success');
+        this.showPage('home');
+    }
+
+    async loadUserPolicies() {
+        if (!this.isCustomerLoggedIn) return;
+
+        try {
+            const token = localStorage.getItem('zerotouch_customer_token');
+            const response = await fetch(`${this.apiBaseUrl}/api/policies/user`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const policies = await response.json();
+                this.userPolicies = policies;
+                this.updateDashboard();
+            }
+        } catch (error) {
+            console.error('Error loading policies:', error);
+            // Fallback to localStorage for demo
+            this.userPolicies = JSON.parse(localStorage.getItem('zerotouch_policies') || '[]');
+        }
+    }
+
+    async purchasePolicy() {
+        if (!this.selectedPolicy || !this.isCustomerLoggedIn) return;
+
+        this.showLoading();
+
+        try {
+            const token = localStorage.getItem('zerotouch_customer_token');
+            const response = await fetch(`${this.apiBaseUrl}/api/policies/purchase`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    policyType: this.selectedPolicy.name,
+                    policyName: this.selectedPolicy.name,
+                    price: this.selectedPolicy.price
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                this.showToast('Policy purchased successfully!', 'success');
+                this.loadUserPolicies(); // Reload policies
+                this.showPage('dashboard');
+            } else {
+                throw new Error('Purchase failed');
+            }
+        } catch (error) {
+            // Fallback to local storage for demo
+            const policy = {
+                _id: Date.now(),
+                ...this.selectedPolicy,
+                userId: this.customerData?.id,
+                purchaseDate: new Date().toISOString(),
+                status: 'active',
+                blockchainHash: this.generateBlockchainHash()
+            };
+
+            this.userPolicies.push(policy);
+            localStorage.setItem('zerotouch_policies', JSON.stringify(this.userPolicies));
+            this.showToast('Policy purchased successfully!', 'success');
+            this.showPage('dashboard');
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    updateCustomerUI() {
+        const customerNavLink = document.getElementById('customer-nav-link');
+        const logoutBtn = document.getElementById('logout-btn');
+        const usernameDisplay = document.getElementById('username-display');
+        const userWelcome = document.getElementById('user-welcome');
+
+        if (this.isCustomerLoggedIn && this.customerData) {
+            // Show user info
+            if (customerNavLink) customerNavLink.textContent = this.customerData.username;
+            if (logoutBtn) logoutBtn.style.display = 'block';
+            if (usernameDisplay) usernameDisplay.textContent = this.customerData.username;
+            if (userWelcome) userWelcome.style.display = 'block';
+        } else {
+            // Show login link
+            if (customerNavLink) customerNavLink.textContent = 'Login';
+            if (logoutBtn) logoutBtn.style.display = 'none';
+            if (userWelcome) userWelcome.style.display = 'none';
+        }
+    }
+
+    // Form Helper Methods
+    showFormError(formId, message) {
+        const form = document.getElementById(formId);
+        if (!form) return;
+
+        const existingError = form.querySelector('.error-message');
+        if (existingError) existingError.remove();
+
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.textContent = message;
+        form.appendChild(errorDiv);
+    }
+
+    clearFormErrors(formId) {
+        const form = document.getElementById(formId);
+        if (!form) return;
+
+        const errorMessages = form.querySelectorAll('.error-message');
+        errorMessages.forEach(error => error.remove());
+    }
+
     showPage(pageName) {
+        // Check customer access for protected pages
+        if (['policies', 'dashboard', 'ar'].includes(pageName) && !this.isCustomerLoggedIn) {
+            pageName = 'customer-login';
+            this.showToast('Please login to access this page', 'warning');
+        }
+
         // Check admin access for demo page
         if (pageName === 'demo' && !this.isAdminLoggedIn) {
             pageName = 'admin-login';
@@ -188,9 +500,6 @@ class ZeroTouchApp {
         const navLink = document.querySelector(`[data-page="${pageName}"]`);
         if (navLink) {
             navLink.classList.add('active');
-        } else if (pageName === 'demo' && this.isAdminLoggedIn) {
-            // Special case for demo when admin is logged in
-            document.querySelector('[data-page="demo"]')?.classList.add('active');
         }
 
         // Update pages
@@ -207,11 +516,10 @@ class ZeroTouchApp {
         // Special actions for certain pages
         if (pageName === 'dashboard') {
             this.updateDashboard();
-        } else if (pageName === 'demo' && this.isAdminLoggedIn) {
-            this.updateDashboard(); // Update dashboard data when accessing demo
         }
     }
 
+    // Admin Authentication (existing methods)
     handleAdminLogin() {
         const usernameInput = document.getElementById('admin-username');
         const passwordInput = document.getElementById('admin-password');
@@ -221,11 +529,8 @@ class ZeroTouchApp {
         const username = usernameInput.value;
         const password = passwordInput.value;
 
-        // Remove any existing error messages
-        const existingError = document.querySelector('.error-message');
-        if (existingError) existingError.remove();
+        this.clearFormErrors('admin-login-form');
 
-        // Check credentials
         if (username === this.adminCredentials.username && 
             password === this.adminCredentials.password) {
             
@@ -236,18 +541,11 @@ class ZeroTouchApp {
             this.showToast('Admin login successful!', 'success');
             this.showPage('demo');
             
-            // Clear form
             const form = document.getElementById('admin-login-form');
             if (form) form.reset();
             
         } else {
-            // Show error message
-            const errorMsg = document.createElement('div');
-            errorMsg.className = 'error-message';
-            errorMsg.textContent = 'Invalid credentials. Please try again.';
-            const form = document.getElementById('admin-login-form');
-            if (form) form.appendChild(errorMsg);
-            
+            this.showFormError('admin-login-form', 'Invalid credentials. Please try again.');
             this.showToast('Invalid admin credentials', 'error');
         }
     }
@@ -256,27 +554,23 @@ class ZeroTouchApp {
         this.isAdminLoggedIn = false;
         localStorage.removeItem('zerotouch_admin_session');
         this.updateAdminUI();
-        this.showToast('Logged out successfully', 'success');
+        this.showToast('Admin logged out successfully', 'success');
         this.showPage('home');
     }
 
     updateAdminUI() {
         const adminNavLink = document.getElementById('admin-nav-link');
-        const logoutBtn = document.getElementById('logout-btn');
         const adminUserDisplay = document.getElementById('admin-user-display');
 
         if (this.isAdminLoggedIn) {
-            // Show logout button, update admin nav text
             if (adminNavLink) adminNavLink.textContent = 'Demo Control';
-            if (logoutBtn) logoutBtn.style.display = 'block';
             if (adminUserDisplay) adminUserDisplay.textContent = 'Admin';
         } else {
-            // Show login link, hide logout button
             if (adminNavLink) adminNavLink.textContent = 'Admin';
-            if (logoutBtn) logoutBtn.style.display = 'none';
         }
     }
 
+    // Existing methods (renderPolicies, selectPolicy, etc.)
     renderPolicies() {
         const grid = document.getElementById('policies-grid');
         if (!grid) return;
@@ -317,30 +611,6 @@ class ZeroTouchApp {
         animateStep();
     }
 
-    purchasePolicy() {
-        if (!this.selectedPolicy) return;
-
-        this.showLoading();
-
-        setTimeout(() => {
-            // Simulate purchase
-            const policy = {
-                id: Date.now(),
-                ...this.selectedPolicy,
-                purchaseDate: new Date().toISOString(),
-                status: 'active',
-                blockchainHash: this.generateBlockchainHash()
-            };
-
-            this.userPolicies.push(policy);
-            this.saveUserPolicies();
-            
-            this.hideLoading();
-            this.showToast('Policy purchased successfully!', 'success');
-            this.showPage('dashboard');
-        }, 2000);
-    }
-
     updateDashboard() {
         // Update stats
         const activePoliciesCount = document.getElementById('active-policies-count');
@@ -357,7 +627,7 @@ class ZeroTouchApp {
         }
         
         if (payoutsReceivedEl) {
-            const payoutsReceived = this.userPolicies.filter(p => p.status === 'paid').length * 10; // Mock payout amount
+            const payoutsReceived = this.userPolicies.filter(p => p.status === 'paid').reduce((sum, policy) => sum + policy.price, 0);
             payoutsReceivedEl.textContent = `₹${payoutsReceived}`;
         }
 
@@ -368,11 +638,11 @@ class ZeroTouchApp {
         if (this.userPolicies.length === 0) {
             listContainer.innerHTML = `
                 <div class="placeholder">
-                    <p>No policies yet. <a href="#" data-page="policies">Buy your first policy</a></p>
+                    <p>No policies yet. <a href="#" class="buy-first-policy-link">Buy your first policy</a></p>
                 </div>
             `;
             // Re-attach event listener for the link
-            const policyLink = listContainer.querySelector('[data-page="policies"]');
+            const policyLink = listContainer.querySelector('.buy-first-policy-link');
             if (policyLink) {
                 policyLink.addEventListener('click', (e) => {
                     e.preventDefault();
@@ -383,7 +653,7 @@ class ZeroTouchApp {
             listContainer.innerHTML = this.userPolicies.map(policy => `
                 <div class="user-policy-card">
                     <div class="policy-info">
-                        <h3>${policy.icon} ${policy.name}</h3>
+                        <h3>${policy.icon || '📋'} ${policy.policyName || policy.name}</h3>
                         <span class="policy-status ${policy.status}">${policy.status.toUpperCase()}</span>
                         <p>Blockchain: ${policy.blockchainHash}</p>
                         <p>Purchased: ${new Date(policy.purchaseDate).toLocaleDateString()}</p>
@@ -428,7 +698,7 @@ class ZeroTouchApp {
                     const activePolicy = this.userPolicies.find(p => p.status === 'active');
                     if (activePolicy) {
                         activePolicy.status = 'paid';
-                        this.saveUserPolicies();
+                        localStorage.setItem('zerotouch_policies', JSON.stringify(this.userPolicies));
                         this.updateDashboard();
                     }
                 }
@@ -491,10 +761,6 @@ class ZeroTouchApp {
 
     generateBlockchainHash() {
         return '0x' + Math.random().toString(16).substr(2, 16);
-    }
-
-    saveUserPolicies() {
-        localStorage.setItem('zerotouch_policies', JSON.stringify(this.userPolicies));
     }
 }
 

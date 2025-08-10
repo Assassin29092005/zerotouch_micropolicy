@@ -1502,5 +1502,156 @@ body {
   text-align: center;
   margin-top: var(--spacing-sm);
 }
+/* Authentication Pages Styles */
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  padding: var(--spacing-lg) 0;
+}
 
+.auth-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-2xl);
+  box-shadow: var(--shadow-lg);
+  max-width: 450px;
+  width: 100%;
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.auth-header h1 {
+  font-size: 2rem;
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-text);
+}
+
+.auth-header p {
+  color: var(--color-text-light);
+  font-size: 1rem;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.form-group label {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  font-size: 0.9rem;
+}
+
+.form-group input {
+  padding: var(--spacing-md) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  transition: all 0.2s;
+  background: var(--color-surface);
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(33, 131, 150, 0.1);
+}
+
+.form-group input:invalid {
+  border-color: var(--color-error);
+}
+
+.auth-switch {
+  text-align: center;
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: var(--color-background);
+  border-radius: var(--radius-sm);
+}
+
+.auth-switch p {
+  margin: 0;
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+}
+
+.auth-switch a {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
+}
+
+.demo-credentials {
+  text-align: center;
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background: var(--color-background);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-light);
+}
+
+.demo-credentials small {
+  font-size: 0.8rem;
+}
+
+/* User Welcome Section */
+.user-welcome {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-lg);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  color: white;
+  border-radius: var(--radius-lg);
+}
+
+.user-welcome h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+/* Enhanced Form Validation */
+.form-group.error input {
+  border-color: var(--color-error);
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
+.form-group .error-text {
+  color: var(--color-error);
+  font-size: 0.8rem;
+  margin-top: var(--spacing-xs);
+}
+
+.form-group.success input {
+  border-color: var(--color-success);
+  background-color: rgba(34, 197, 94, 0.05);
+}
+
+/* Responsive Authentication */
+@media (max-width: 480px) {
+  .auth-card {
+    padding: var(--spacing-lg);
+    margin: var(--spacing-sm);
+  }
+  
+  .auth-header h1 {
+    font-size: 1.75rem;
+  }
+}
 }
