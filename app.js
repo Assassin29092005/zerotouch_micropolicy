@@ -5,6 +5,11 @@ class ZeroTouchApp {
         this.selectedPolicy = null;
         this.userPolicies = JSON.parse(localStorage.getItem('zerotouch_policies') || '[]');
         this.arStepInterval = null;
+        this.isAdminLoggedIn = localStorage.getItem('zerotouch_admin_session') === 'true';
+        this.adminCredentials = {
+            username: 'admin',
+            password: 'zerotouch123'
+        };
         
         // Policy data
         this.policies = [
@@ -52,7 +57,7 @@ class ZeroTouchApp {
             {
                 type: "flight",
                 description: "Flight AI-101 delayed by 3 hours",
-                policyType: "Flight Delay Cover", 
+                policyType: "Flight Delay Cover",
                 payout: "₹25"
             },
             {
@@ -73,151 +78,243 @@ class ZeroTouchApp {
     }
 
     init() {
-        this.bindEvents();
+        this.setupEventListeners();
         this.renderPolicies();
         this.updateDashboard();
+        this.updateAdminUI();
         this.showPage('home');
-        
-        // Check for demo mode in URL
-        if (window.location.pathname.includes('demo') || window.location.hash.includes('demo')) {
-            this.showPage('demo');
+    }
+
+    setupEventListeners() {
+        // Navigation - regular pages
+        document.querySelectorAll('[data-page]').forEach(btn => {
+            if (btn.getAttribute('data-page') !== 'demo') {
+                btn.addEventListener('click', (e) => {
+                    const page = e.target.getAttribute('data-page');
+                    this.showPage(page);
+                });
+            }
+        });
+
+        // Special handling for demo page access
+        const demoNavButton = document.querySelector('[data-page="demo"]');
+        if (demoNavButton) {
+            demoNavButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (this.isAdminLoggedIn) {
+                    this.showPage('demo');
+                } else {
+                    this.showPage('admin-login');
+                    this.showToast('Please login as admin to access demo controls', 'warning');
+                }
+            });
         }
-    }
 
-    bindEvents() {
-        // Navigation
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                const page = e.target.dataset.page;
-                this.showPage(page);
+        // Admin login form
+        const adminForm = document.getElementById('admin-login-form');
+        if (adminForm) {
+            adminForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleAdminLogin();
             });
+        }
+
+        // Logout buttons
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                this.handleAdminLogout();
+            });
+        }
+
+        const adminLogoutBtn = document.getElementById('admin-logout');
+        if (adminLogoutBtn) {
+            adminLogoutBtn.addEventListener('click', () => {
+                this.handleAdminLogout();
+            });
+        }
+
+        // Policy selection
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.policy-card')) {
+                const policyId = parseInt(e.target.closest('.policy-card').getAttribute('data-policy-id'));
+                this.selectPolicy(policyId);
+            }
         });
 
-        // Get started button
-        document.getElementById('get-started-btn').addEventListener('click', () => {
-            this.showPage('policies');
-        });
+        // AR controls
+        const arReplayBtn = document.getElementById('ar-replay');
+        if (arReplayBtn) {
+            arReplayBtn.addEventListener('click', () => {
+                this.playARAnimation();
+            });
+        }
 
-        // AR continue button
-        document.getElementById('continue-purchase-btn').addEventListener('click', () => {
-            this.purchasePolicy();
-        });
+        const arContinueBtn = document.getElementById('ar-continue');
+        if (arContinueBtn) {
+            arContinueBtn.addEventListener('click', () => {
+                this.purchasePolicy();
+            });
+        }
 
-        // Demo triggers
-        document.querySelectorAll('.demo-trigger').forEach(btn => {
+        // Demo events - with admin protection
+        document.querySelectorAll('[data-event]').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const eventType = e.currentTarget.dataset.event;
-                this.triggerDemoEvent(eventType);
-            });
-        });
-
-        // Policy cards (will be bound after rendering)
-        this.bindPolicyCards();
-    }
-
-    bindPolicyCards() {
-        document.querySelectorAll('.policy-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const policyId = parseInt(card.dataset.policyId);
-                this.selectedPolicy = this.policies.find(p => p.id === policyId);
-                this.showARExplainer();
+                if (!this.isAdminLoggedIn) {
+                    this.showToast('Admin access required', 'error');
+                    this.showPage('admin-login');
+                    return;
+                }
+                const eventType = e.target.getAttribute('data-event');
+                this.simulateEvent(eventType);
             });
         });
     }
 
-    showPage(pageId) {
+    showPage(pageName) {
+        // Check admin access for demo page
+        if (pageName === 'demo' && !this.isAdminLoggedIn) {
+            pageName = 'admin-login';
+            this.showToast('Admin login required for demo access', 'warning');
+        }
+
         // Update navigation
         document.querySelectorAll('.nav-link').forEach(link => {
             link.classList.remove('active');
-            if (link.dataset.page === pageId) {
-                link.classList.add('active');
-            }
         });
+        
+        // Find the correct nav link to activate
+        const navLink = document.querySelector(`[data-page="${pageName}"]`);
+        if (navLink) {
+            navLink.classList.add('active');
+        } else if (pageName === 'demo' && this.isAdminLoggedIn) {
+            // Special case for demo when admin is logged in
+            document.querySelector('[data-page="demo"]')?.classList.add('active');
+        }
 
         // Update pages
         document.querySelectorAll('.page').forEach(page => {
             page.classList.remove('active');
         });
-        
-        const targetPage = document.getElementById(`${pageId}-page`);
+        const targetPage = document.getElementById(`${pageName}-page`);
         if (targetPage) {
             targetPage.classList.add('active');
-            this.currentPage = pageId;
         }
 
-        // Page-specific actions
-        if (pageId === 'dashboard') {
+        this.currentPage = pageName;
+
+        // Special actions for certain pages
+        if (pageName === 'dashboard') {
             this.updateDashboard();
-        } else if (pageId === 'demo') {
-            this.initDemoMode();
+        } else if (pageName === 'demo' && this.isAdminLoggedIn) {
+            this.updateDashboard(); // Update dashboard data when accessing demo
         }
+    }
 
-        // Update URL without reloading
-        window.history.pushState({}, '', `#${pageId}`);
+    handleAdminLogin() {
+        const usernameInput = document.getElementById('admin-username');
+        const passwordInput = document.getElementById('admin-password');
+        
+        if (!usernameInput || !passwordInput) return;
+
+        const username = usernameInput.value;
+        const password = passwordInput.value;
+
+        // Remove any existing error messages
+        const existingError = document.querySelector('.error-message');
+        if (existingError) existingError.remove();
+
+        // Check credentials
+        if (username === this.adminCredentials.username && 
+            password === this.adminCredentials.password) {
+            
+            this.isAdminLoggedIn = true;
+            localStorage.setItem('zerotouch_admin_session', 'true');
+            
+            this.updateAdminUI();
+            this.showToast('Admin login successful!', 'success');
+            this.showPage('demo');
+            
+            // Clear form
+            const form = document.getElementById('admin-login-form');
+            if (form) form.reset();
+            
+        } else {
+            // Show error message
+            const errorMsg = document.createElement('div');
+            errorMsg.className = 'error-message';
+            errorMsg.textContent = 'Invalid credentials. Please try again.';
+            const form = document.getElementById('admin-login-form');
+            if (form) form.appendChild(errorMsg);
+            
+            this.showToast('Invalid admin credentials', 'error');
+        }
+    }
+
+    handleAdminLogout() {
+        this.isAdminLoggedIn = false;
+        localStorage.removeItem('zerotouch_admin_session');
+        this.updateAdminUI();
+        this.showToast('Logged out successfully', 'success');
+        this.showPage('home');
+    }
+
+    updateAdminUI() {
+        const adminNavLink = document.getElementById('admin-nav-link');
+        const logoutBtn = document.getElementById('logout-btn');
+        const adminUserDisplay = document.getElementById('admin-user-display');
+
+        if (this.isAdminLoggedIn) {
+            // Show logout button, update admin nav text
+            if (adminNavLink) adminNavLink.textContent = 'Demo Control';
+            if (logoutBtn) logoutBtn.style.display = 'block';
+            if (adminUserDisplay) adminUserDisplay.textContent = 'Admin';
+        } else {
+            // Show login link, hide logout button
+            if (adminNavLink) adminNavLink.textContent = 'Admin';
+            if (logoutBtn) logoutBtn.style.display = 'none';
+        }
     }
 
     renderPolicies() {
         const grid = document.getElementById('policies-grid');
-        grid.innerHTML = '';
+        if (!grid) return;
 
-        this.policies.forEach(policy => {
-            const card = document.createElement('div');
-            card.className = 'policy-card';
-            card.dataset.policyId = policy.id;
-            
-            card.innerHTML = `
+        grid.innerHTML = this.policies.map(policy => `
+            <div class="policy-card" data-policy-id="${policy.id}">
                 <div class="policy-header">
-                    <div class="policy-icon">${policy.icon}</div>
-                    <div class="policy-info">
-                        <h3>${policy.name}</h3>
-                        <div class="policy-price">₹${policy.price}</div>
-                    </div>
+                    <span class="policy-icon">${policy.icon}</span>
+                    <span class="policy-name">${policy.name}</span>
                 </div>
+                <div class="policy-price">₹${policy.price}</div>
                 <div class="policy-description">${policy.description}</div>
                 <div class="policy-details">${policy.details}</div>
-                <button class="btn btn--primary btn--full-width">Buy Now</button>
-            `;
-
-            grid.appendChild(card);
-        });
-
-        this.bindPolicyCards();
+                <button class="btn btn-primary">Buy Now</button>
+            </div>
+        `).join('');
     }
 
-    showARExplainer() {
-        this.showPage('ar-explainer');
-        
-        // Update AR content
-        document.getElementById('ar-policy-name').textContent = this.selectedPolicy.name;
-        
-        // Start AR simulation
-        this.startARSimulation();
+    selectPolicy(policyId) {
+        this.selectedPolicy = this.policies.find(p => p.id === policyId);
+        this.showPage('ar');
+        setTimeout(() => this.playARAnimation(), 500);
     }
 
-    startARSimulation() {
-        let currentStep = 1;
-        const maxSteps = 4;
-        
-        // Reset AR steps
-        document.querySelectorAll('.ar-step').forEach(step => {
-            step.classList.remove('active');
-        });
-        document.querySelector('[data-step="1"]').classList.add('active');
+    playARAnimation() {
+        const steps = document.querySelectorAll('.ar-step');
+        steps.forEach(step => step.classList.remove('active'));
 
-        // Clear any existing interval
-        if (this.arStepInterval) {
-            clearInterval(this.arStepInterval);
-        }
-
-        // Progress through AR steps
-        this.arStepInterval = setInterval(() => {
-            currentStep++;
-            if (currentStep <= maxSteps) {
-                document.querySelector(`[data-step="${currentStep}"]`).classList.add('active');
-            } else {
-                clearInterval(this.arStepInterval);
+        let currentStep = 0;
+        const animateStep = () => {
+            if (currentStep < steps.length) {
+                steps[currentStep].classList.add('active');
+                currentStep++;
+                setTimeout(animateStep, 1500);
             }
-        }, 1500);
+        };
+
+        animateStep();
     }
 
     purchasePolicy() {
@@ -225,80 +322,85 @@ class ZeroTouchApp {
 
         this.showLoading();
 
-        // Simulate purchase process
         setTimeout(() => {
-            const newPolicy = {
-                id: `tx${Date.now()}`,
-                policyName: this.selectedPolicy.name,
-                status: 'Active',
+            // Simulate purchase
+            const policy = {
+                id: Date.now(),
+                ...this.selectedPolicy,
                 purchaseDate: new Date().toISOString(),
-                eventTriggered: false,
-                payout: null,
-                blockchainHash: `0x${Math.random().toString(16).substr(2, 16)}`,
-                price: this.selectedPolicy.price,
-                icon: this.selectedPolicy.icon
+                status: 'active',
+                blockchainHash: this.generateBlockchainHash()
             };
 
-            this.userPolicies.push(newPolicy);
-            localStorage.setItem('zerotouch_policies', JSON.stringify(this.userPolicies));
+            this.userPolicies.push(policy);
+            this.saveUserPolicies();
             
             this.hideLoading();
             this.showToast('Policy purchased successfully!', 'success');
             this.showPage('dashboard');
-            this.selectedPolicy = null;
         }, 2000);
     }
 
     updateDashboard() {
         // Update stats
-        document.getElementById('active-policies-count').textContent = this.userPolicies.length;
-        
-        const totalPayouts = this.userPolicies
-            .filter(p => p.payout)
-            .reduce((sum, p) => sum + (parseInt(p.payout.replace('₹', '')) || 0), 0);
-        document.getElementById('total-payouts').textContent = `₹${totalPayouts}`;
+        const activePoliciesCount = document.getElementById('active-policies-count');
+        const totalCoverageEl = document.getElementById('total-coverage');
+        const payoutsReceivedEl = document.getElementById('payouts-received');
 
-        // Render policies list
-        const container = document.getElementById('user-policies');
+        if (activePoliciesCount) {
+            activePoliciesCount.textContent = this.userPolicies.filter(p => p.status === 'active').length;
+        }
         
+        if (totalCoverageEl) {
+            const totalCoverage = this.userPolicies.reduce((sum, policy) => sum + policy.price, 0);
+            totalCoverageEl.textContent = `₹${totalCoverage}`;
+        }
+        
+        if (payoutsReceivedEl) {
+            const payoutsReceived = this.userPolicies.filter(p => p.status === 'paid').length * 10; // Mock payout amount
+            payoutsReceivedEl.textContent = `₹${payoutsReceived}`;
+        }
+
+        // Update policies list
+        const listContainer = document.getElementById('user-policies-list');
+        if (!listContainer) return;
+
         if (this.userPolicies.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <span class="empty-icon">📋</span>
-                    <h3>No Active Policies</h3>
-                    <p>Get started by purchasing your first micro-policy</p>
-                    <button class="btn btn--primary" onclick="app.showPage('policies')">Browse Policies</button>
+            listContainer.innerHTML = `
+                <div class="placeholder">
+                    <p>No policies yet. <a href="#" data-page="policies">Buy your first policy</a></p>
                 </div>
             `;
+            // Re-attach event listener for the link
+            const policyLink = listContainer.querySelector('[data-page="policies"]');
+            if (policyLink) {
+                policyLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.showPage('policies');
+                });
+            }
+        } else {
+            listContainer.innerHTML = this.userPolicies.map(policy => `
+                <div class="user-policy-card">
+                    <div class="policy-info">
+                        <h3>${policy.icon} ${policy.name}</h3>
+                        <span class="policy-status ${policy.status}">${policy.status.toUpperCase()}</span>
+                        <p>Blockchain: ${policy.blockchainHash}</p>
+                        <p>Purchased: ${new Date(policy.purchaseDate).toLocaleDateString()}</p>
+                    </div>
+                    <div class="policy-price">₹${policy.price}</div>
+                </div>
+            `).join('');
+        }
+    }
+
+    simulateEvent(eventType) {
+        if (!this.isAdminLoggedIn) {
+            this.showToast('Admin access required to trigger events', 'error');
+            this.showPage('admin-login');
             return;
         }
 
-        container.innerHTML = this.userPolicies.map(policy => `
-            <div class="policy-item">
-                <div class="policy-item-info">
-                    <h4>${policy.icon} ${policy.policyName}</h4>
-                    <div class="policy-item-meta">
-                        Purchased: ${new Date(policy.purchaseDate).toLocaleDateString()}
-                        <br>
-                        Blockchain: ${policy.blockchainHash}
-                    </div>
-                </div>
-                <div class="policy-item-status">
-                    <span class="status-badge ${policy.status.toLowerCase()}">${policy.status}</span>
-                    ${policy.payout ? `<div class="policy-payout">Payout: ${policy.payout}</div>` : ''}
-                </div>
-            </div>
-        `).join('');
-    }
-
-    initDemoMode() {
-        const demoLog = document.getElementById('demo-log');
-        if (demoLog.children.length <= 1) { // Only placeholder
-            demoLog.innerHTML = '<p class="demo-placeholder">Click buttons above to simulate events and see instant responses</p>';
-        }
-    }
-
-    triggerDemoEvent(eventType) {
         const event = this.demoEvents.find(e => e.type === eventType);
         if (!event) return;
 
@@ -306,209 +408,97 @@ class ZeroTouchApp {
 
         setTimeout(() => {
             this.hideLoading();
-            this.addDemoLogEntry(event);
             
-            if (eventType === 'fake') {
-                this.showToast('Fraud attempt blocked!', 'error');
-            } else {
-                this.showToast(`Instant payout: ${event.payout}`, 'success');
-                
-                // Update a random user policy to show payout
+            const isSuccess = eventType !== 'fake';
+            const logEntry = {
+                timestamp: new Date().toLocaleString(),
+                description: event.description,
+                policyType: event.policyType,
+                payout: event.payout,
+                type: isSuccess ? 'success' : 'error',
+                triggeredBy: 'Admin'
+            };
+
+            this.addLogEntry(logEntry);
+            
+            if (isSuccess) {
+                this.showToast(`Event detected! ${event.payout} paid instantly`, 'success');
+                // Update a policy status if exists
                 if (this.userPolicies.length > 0) {
-                    const matchingPolicy = this.userPolicies.find(p => 
-                        p.policyName === event.policyType && p.status === 'Active'
-                    );
-                    if (matchingPolicy) {
-                        matchingPolicy.status = 'Paid Out';
-                        matchingPolicy.payout = event.payout;
-                        matchingPolicy.eventTriggered = true;
-                        localStorage.setItem('zerotouch_policies', JSON.stringify(this.userPolicies));
+                    const activePolicy = this.userPolicies.find(p => p.status === 'active');
+                    if (activePolicy) {
+                        activePolicy.status = 'paid';
+                        this.saveUserPolicies();
+                        this.updateDashboard();
                     }
                 }
+            } else {
+                this.showToast('Fraud attempt blocked!', 'error');
             }
         }, 1500);
     }
 
-    addDemoLogEntry(event) {
-        const demoLog = document.getElementById('demo-log');
-        
-        // Remove placeholder if it exists
-        const placeholder = demoLog.querySelector('.demo-placeholder');
-        if (placeholder) {
-            placeholder.remove();
-        }
+    addLogEntry(entry) {
+        const logEntries = document.getElementById('log-entries');
+        if (!logEntries) return;
 
-        const logEntry = document.createElement('div');
-        logEntry.className = `demo-event ${event.type === 'fake' ? 'error' : 'success'}`;
-        
-        logEntry.innerHTML = `
-            <div class="demo-event-header">
-                <strong>${event.policyType}</strong>
-                <span class="demo-event-time">${new Date().toLocaleTimeString()}</span>
-            </div>
-            <div class="demo-event-description">${event.description}</div>
-            <div class="demo-event-payout ${event.type === 'fake' ? 'rejected' : ''}">${event.payout}</div>
+        const placeholder = logEntries.querySelector('.placeholder');
+        if (placeholder) placeholder.remove();
+
+        const entryElement = document.createElement('div');
+        entryElement.className = `log-entry ${entry.type}`;
+        entryElement.innerHTML = `
+            <div class="timestamp">${entry.timestamp}${entry.triggeredBy ? ` - Triggered by ${entry.triggeredBy}` : ''}</div>
+            <div class="event-description">${entry.description}</div>
+            <div class="payout-amount">${entry.payout}</div>
         `;
 
-        demoLog.insertBefore(logEntry, demoLog.firstChild);
+        logEntries.insertBefore(entryElement, logEntries.firstChild);
+    }
 
-        // Limit log entries to 10
-        while (demoLog.children.length > 10) {
-            demoLog.removeChild(demoLog.lastChild);
+    showLoading() {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) {
+            loadingOverlay.classList.add('active');
         }
     }
 
-    showToast(message, type = 'info') {
-        const container = document.getElementById('toast-container');
+    hideLoading() {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) {
+            loadingOverlay.classList.remove('active');
+        }
+    }
+
+    showToast(message, type = 'success') {
+        const toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) return;
+
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
-        toast.textContent = message;
+        toast.innerHTML = `
+            <div class="toast-message">${message}</div>
+        `;
 
-        container.appendChild(toast);
+        toastContainer.appendChild(toast);
 
-        // Auto remove after 4 seconds
         setTimeout(() => {
             if (toast.parentNode) {
-                toast.parentNode.removeChild(toast);
+                toast.remove();
             }
         }, 4000);
     }
 
-    showLoading() {
-        document.getElementById('loading-overlay').classList.add('active');
+    generateBlockchainHash() {
+        return '0x' + Math.random().toString(16).substr(2, 16);
     }
 
-    hideLoading() {
-        document.getElementById('loading-overlay').classList.remove('active');
+    saveUserPolicies() {
+        localStorage.setItem('zerotouch_policies', JSON.stringify(this.userPolicies));
     }
 }
 
-// PWA Service Worker Registration
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        // Create a simple service worker inline
-        const swCode = `
-            const CACHE_NAME = 'zerotouch-v1';
-            const urlsToCache = [
-                '/',
-                '/style.css',
-                '/app.js'
-            ];
-
-            self.addEventListener('install', (event) => {
-                event.waitUntil(
-                    caches.open(CACHE_NAME)
-                        .then((cache) => cache.addAll(urlsToCache))
-                );
-            });
-
-            self.addEventListener('fetch', (event) => {
-                event.respondWith(
-                    caches.match(event.request)
-                        .then((response) => {
-                            return response || fetch(event.request);
-                        })
-                );
-            });
-        `;
-
-        const blob = new Blob([swCode], { type: 'application/javascript' });
-        const swUrl = URL.createObjectURL(blob);
-
-        navigator.serviceWorker.register(swUrl)
-            .then((registration) => {
-                console.log('SW registered: ', registration);
-            })
-            .catch((registrationError) => {
-                console.log('SW registration failed: ', registrationError);
-            });
-    });
-}
-
-// Initialize app
-let app;
+// Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    app = new ZeroTouchApp();
-    
-    // Handle browser back/forward
-    window.addEventListener('popstate', () => {
-        const hash = window.location.hash.substr(1);
-        if (hash && ['home', 'policies', 'dashboard', 'demo', 'ar-explainer'].includes(hash)) {
-            app.showPage(hash);
-        }
-    });
-    
-    // Handle initial hash
-    const initialHash = window.location.hash.substr(1);
-    if (initialHash) {
-        app.showPage(initialHash);
-    }
+    new ZeroTouchApp();
 });
-
-// Add some demo data for first-time visitors
-document.addEventListener('DOMContentLoaded', () => {
-    // Add a sample policy for demo purposes if none exist
-    const existingPolicies = JSON.parse(localStorage.getItem('zerotouch_policies') || '[]');
-    if (existingPolicies.length === 0) {
-        const samplePolicies = [
-            {
-                id: 'tx001',
-                policyName: 'Rain Delay Cover',
-                status: 'Active',
-                purchaseDate: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-                eventTriggered: false,
-                payout: null,
-                blockchainHash: '0x1a2b3c4d5e6f7890',
-                price: 10,
-                icon: '🌧️'
-            }
-        ];
-        localStorage.setItem('zerotouch_policies', JSON.stringify(samplePolicies));
-    }
-});
-
-// Keyboard shortcuts for demo mode
-document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-        e.preventDefault();
-        app.showPage('demo');
-    }
-});
-
-// Install prompt for PWA
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-    deferredPrompt = e;
-    
-    // Show install button
-    const installBtn = document.createElement('button');
-    installBtn.className = 'btn btn--outline install-btn';
-    installBtn.textContent = 'Install App';
-    installBtn.style.position = 'fixed';
-    installBtn.style.bottom = '20px';
-    installBtn.style.right = '20px';
-    installBtn.style.zIndex = '1000';
-    
-    installBtn.addEventListener('click', () => {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-            if (choiceResult.outcome === 'accepted') {
-                console.log('User accepted the A2HS prompt');
-            }
-            deferredPrompt = null;
-            installBtn.remove();
-        });
-    });
-    
-    document.body.appendChild(installBtn);
-    
-    // Auto-hide after 10 seconds
-    setTimeout(() => {
-        if (installBtn.parentNode) {
-            installBtn.remove();
-        }
-    }, 10000);
-});
-
-// Export for global access
-window.ZeroTouchApp = ZeroTouchApp;

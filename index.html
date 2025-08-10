@@ -21,7 +21,8 @@
                     <button class="nav-link" data-page="home">Home</button>
                     <button class="nav-link" data-page="policies">Policies</button>
                     <button class="nav-link" data-page="dashboard">Dashboard</button>
-                    <button class="nav-link" data-page="demo">Demo</button>
+                    <button class="nav-link" data-page="admin-login" id="admin-nav-link">Admin</button>
+                    <button class="nav-link logout-btn" id="logout-btn" style="display: none;">Logout</button>
                 </nav>
             </div>
         </div>
@@ -161,42 +162,47 @@
         </div>
     </main>
 
-    <!-- Demo/Judge Mode -->
-    <main class="page" id="demo-page">
+    <!-- Demo/Judge Mode Page -->
+<main class="page" id="demo-page">
+    <div class="container">
+        <div class="demo-header">
+            <h1>🎭 Admin Control Panel</h1>
+            <p>Simulate events to demonstrate instant payouts and fraud prevention</p>
+            <div class="admin-info">
+                <span>👤 Logged in as: <strong id="admin-user-display">Admin</strong></span>
+                <button class="btn btn-secondary btn-small" id="admin-logout">Logout</button>
+            </div>
+        </div>
+        <!-- Rest of demo content stays the same -->
+
+    <!-- Admin Login Page -->
+    <main class="page" id="admin-login-page">
         <div class="container">
-            <div class="page-header">
-                <h1>Demo Mode</h1>
-                <p>Test ZeroTouch instant payouts and fraud prevention</p>
-            </div>
-            <div class="demo-controls">
-                <h2>Trigger Events</h2>
-                <div class="demo-buttons">
-                    <button class="btn btn--outline demo-trigger" data-event="rain">
-                        <span class="demo-icon">🌧️</span>
-                        Trigger Rain Event
-                    </button>
-                    <button class="btn btn--outline demo-trigger" data-event="flight">
-                        <span class="demo-icon">✈️</span>
-                        Trigger Flight Delay
-                    </button>
-                    <button class="btn btn--outline demo-trigger" data-event="traffic">
-                        <span class="demo-icon">🚗</span>
-                        Trigger Traffic Jam
-                    </button>
-                    <button class="btn btn--outline demo-trigger fraud-btn" data-event="fake">
-                        <span class="demo-icon">⚠️</span>
-                        Attempt Fake Claim
-                    </button>
-                </div>
-            </div>
-            <div class="demo-results" id="demo-results">
-                <h2>Event Log</h2>
-                <div class="demo-log" id="demo-log">
-                    <p class="demo-placeholder">Click buttons above to simulate events and see instant responses</p>
+            <div class="login-container">
+                <div class="login-card">
+                    <div class="login-header">
+                        <h1>🔐 Admin Access</h1>
+                        <p>Login to access event simulation controls</p>
+                    </div>
+                    <form class="login-form" id="admin-login-form">
+                        <div class="form-group">
+                            <label for="admin-username">Username</label>
+                            <input type="text" id="admin-username" name="username" required placeholder="Enter admin username">
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-password">Password</label>
+                            <input type="password" id="admin-password" name="password" required placeholder="Enter admin password">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-large">Login</button>
+                        <div class="demo-credentials">
+                            <small>Demo credentials: admin / zerotouch123</small>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </main>
+
 
     <!-- Toast Notifications -->
     <div class="toast-container" id="toast-container"></div>
