@@ -10,7 +10,7 @@ class ZeroTouchApp {
         this.customerData = JSON.parse(localStorage.getItem('zerotouch_customer_data') || 'null');
         this.apiBaseUrl = window.location.hostname === 'localhost' ? 
             'http://localhost:5000' : 
-            'https://your-actual-backend-url.onrender.com';
+            'https://https://zerotouch-backend.onrender.com';
         
         this.adminCredentials = {
             username: 'admin',
