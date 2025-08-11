@@ -273,16 +273,84 @@ class ZeroTouchApp {
         });
     }
 
-    // Customer Authentication Methods
-    async handleCustomerLogin() {
-        const email = document.getElementById('customer-email').value;
-        const password = document.getElementById('customer-password').value;
+    // Updated Customer Authentication Methods in app.js
 
-        this.clearFormErrors('customer-login-form');
+async handleCustomerLogin() {
+    const email = document.getElementById('customer-email').value;
+    const password = document.getElementById('customer-password').value;
 
-        // Demo login check
+    this.clearFormErrors('customer-login-form');
+
+    // Validate input
+    if (!email || !password) {
+        this.showFormError('customer-login-form', 'Please fill in all fields');
+        return;
+    }
+
+    try {
+        this.showLoading();
+        console.log('🔐 Attempting login for:', email);
+        
+        const response = await fetch(`${this.apiBaseUrl}/api/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+        console.log('📨 Login response:', data);
+
+        if (response.ok) {
+            // Successful database login
+            this.isCustomerLoggedIn = true;
+            localStorage.setItem('zerotouch_customer_token', data.token);
+            localStorage.setItem('zerotouch_customer_data', JSON.stringify(data.user));
+            this.customerData = data.user;
+
+            this.updateCustomerUI();
+            this.loadUserPolicies();
+            this.showToast(`Welcome back, ${data.user.username}!`, 'success');
+            this.showPage('dashboard');
+            document.getElementById('customer-login-form').reset();
+        } else {
+            // Check if it's the demo credentials as fallback
+            if (email === 'demo@test.com' && password === 'password123') {
+                console.log('🎭 Using demo login');
+                const demoCustomer = {
+                    id: 'demo123',
+                    username: 'Demo User',
+                    email: 'demo@test.com'
+                };
+                
+                this.isCustomerLoggedIn = true;
+                localStorage.setItem('zerotouch_customer_token', 'demo_token');
+                localStorage.setItem('zerotouch_customer_data', JSON.stringify(demoCustomer));
+                this.customerData = demoCustomer;
+
+                this.updateCustomerUI();
+                this.loadUserPolicies();
+                this.showToast('Demo login successful!', 'success');
+                this.showPage('dashboard');
+                document.getElementById('customer-login-form').reset();
+            } else {
+                this.showFormError('customer-login-form', data.message);
+                this.showToast(data.message, 'error');
+            }
+        }
+    } catch (error) {
+        console.error('❌ Login error:', error);
+        
+        // Network error fallback - try demo credentials
         if (email === 'demo@test.com' && password === 'password123') {
-            const demoCustomer = JSON.parse(localStorage.getItem('demo_customer'));
+            console.log('🎭 Network error, using demo login');
+            const demoCustomer = {
+                id: 'demo123',
+                username: 'Demo User',
+                email: 'demo@test.com'
+            };
+            
             this.isCustomerLoggedIn = true;
             localStorage.setItem('zerotouch_customer_token', 'demo_token');
             localStorage.setItem('zerotouch_customer_data', JSON.stringify(demoCustomer));
@@ -290,76 +358,47 @@ class ZeroTouchApp {
 
             this.updateCustomerUI();
             this.loadUserPolicies();
-            this.showToast('Demo login successful!', 'success');
+            this.showToast('Demo login successful (offline mode)!', 'warning');
             this.showPage('dashboard');
             document.getElementById('customer-login-form').reset();
-            return;
+        } else {
+            this.showFormError('customer-login-form', 'Unable to connect to server. Please try again.');
+            this.showToast('Connection error. Please check your internet connection.', 'error');
         }
-
-        try {
-            this.showLoading();
-            const response = await fetch(`${this.apiBaseUrl}/api/auth/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email, password })
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                this.isCustomerLoggedIn = true;
-                localStorage.setItem('zerotouch_customer_token', data.token);
-                localStorage.setItem('zerotouch_customer_data', JSON.stringify(data.user));
-                this.customerData = data.user;
-
-                this.updateCustomerUI();
-                this.loadUserPolicies();
-                this.showToast('Login successful!', 'success');
-                this.showPage('dashboard');
-                document.getElementById('customer-login-form').reset();
-            } else {
-                this.showFormError('customer-login-form', data.message);
-                this.showToast(data.message, 'error');
-            }
-        } catch (error) {
-            this.showFormError('customer-login-form', 'Network error. Using demo mode.');
-            this.showToast('Backend not available. Try demo credentials: demo@test.com / password123', 'warning');
-            console.error('Login error:', error);
-        } finally {
-            this.hideLoading();
-        }
+    } finally {
+        this.hideLoading();
     }
+}
 
-    async handleCustomerSignup() {
-    console.log('handleCustomerSignup called'); // Debug log
+async handleCustomerSignup() {
+    console.log('📝 Signup form submitted');
     
     const username = document.getElementById('signup-username').value;
     const email = document.getElementById('signup-email').value;
     const password = document.getElementById('signup-password').value;
     const confirmPassword = document.getElementById('confirm-password').value;
 
-    console.log('Form values:', { username, email, password }); // Debug log
-
     this.clearFormErrors('customer-signup-form');
 
-    // Validate passwords match
+    // Validate input
+    if (!username || !email || !password || !confirmPassword) {
+        this.showFormError('customer-signup-form', 'Please fill in all fields');
+        return;
+    }
+
     if (password !== confirmPassword) {
-        console.log('Passwords do not match'); // Debug log
         this.showFormError('customer-signup-form', 'Passwords do not match');
         return;
     }
 
-    // Validate all fields are filled
-    if (!username || !email || !password) {
-        this.showFormError('customer-signup-form', 'Please fill all fields');
+    if (password.length < 6) {
+        this.showFormError('customer-signup-form', 'Password must be at least 6 characters');
         return;
     }
 
     try {
         this.showLoading();
-        console.log('Making API request to:', `${this.apiBaseUrl}/api/auth/signup`); // Debug log
+        console.log('🔗 Making signup request to:', `${this.apiBaseUrl}/api/auth/signup`);
         
         const response = await fetch(`${this.apiBaseUrl}/api/auth/signup`, {
             method: 'POST',
@@ -369,18 +408,18 @@ class ZeroTouchApp {
             body: JSON.stringify({ username, email, password })
         });
 
-        console.log('API Response status:', response.status); // Debug log
         const data = await response.json();
-        console.log('API Response data:', data); // Debug log
+        console.log('📨 Signup response:', response.status, data);
 
         if (response.ok) {
+            // Successful database signup
             this.isCustomerLoggedIn = true;
             localStorage.setItem('zerotouch_customer_token', data.token);
             localStorage.setItem('zerotouch_customer_data', JSON.stringify(data.user));
             this.customerData = data.user;
 
             this.updateCustomerUI();
-            this.showToast('Account created successfully!', 'success');
+            this.showToast(`Account created successfully! Welcome, ${data.user.username}!`, 'success');
             this.showPage('dashboard');
             document.getElementById('customer-signup-form').reset();
         } else {
@@ -388,11 +427,12 @@ class ZeroTouchApp {
             this.showToast(data.message, 'error');
         }
     } catch (error) {
-        console.error('Signup error:', error); // Debug log
+        console.error('❌ Signup error:', error);
         
-        // Fallback to local storage for demo
+        // Network error fallback - create local demo account
+        console.log('🎭 Network error, creating local demo account');
         const newUser = {
-            id: Date.now(),
+            id: 'local_' + Date.now(),
             username,
             email
         };
@@ -401,15 +441,13 @@ class ZeroTouchApp {
         this.customerData = newUser;
         this.isCustomerLoggedIn = true;
         this.updateCustomerUI();
-        this.showToast('Account created (demo mode - backend not available)!', 'warning');
+        this.showToast(`Account created (offline mode)! Welcome, ${username}!`, 'warning');
         this.showPage('dashboard');
         document.getElementById('customer-signup-form').reset();
     } finally {
         this.hideLoading();
     }
 }
-
-
     handleCustomerLogout() {
         this.isCustomerLoggedIn = false;
         this.customerData = null;

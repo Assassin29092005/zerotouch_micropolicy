@@ -8,19 +8,21 @@ require('dotenv').config();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:3000', 'http://127.0.0.1:5500', 'https://your-frontend-url.onrender.com'],
+    credentials: true
+}));
 app.use(express.json());
+
+// Serve static files (for frontend)
 app.use(express.static('.'));
 
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://your-username:your-password@cluster0.mongodb.net/zerotouch?retryWrites=true&w=majority';
 
-mongoose.connect(MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => console.error('MongoDB connection error:', err));
+mongoose.connect(MONGODB_URI)
+.then(() => console.log('✅ Connected to MongoDB'))
+.catch(err => console.error('❌ MongoDB connection error:', err));
 
 // User Schema
 const userSchema = new mongoose.Schema({
@@ -65,15 +67,33 @@ const authenticateToken = (req, res, next) => {
 
 // Routes
 
+// Health Check
+app.get('/', (req, res) => {
+  res.json({ message: 'ZeroTouch Backend is running!', status: 'healthy' });
+});
+
 // User Registration
 app.post('/api/auth/signup', async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
+    console.log('📝 Signup attempt:', { username, email });
+
+    // Validate input
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
     // Check if user exists
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ 
+        message: existingUser.email === email ? 'Email already registered' : 'Username already taken' 
+      });
     }
 
     // Hash password
@@ -87,6 +107,7 @@ app.post('/api/auth/signup', async (req, res) => {
     });
 
     await user.save();
+    console.log('✅ User created:', user.email);
 
     // Generate token
     const token = jwt.sign(
@@ -105,7 +126,8 @@ app.post('/api/auth/signup', async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('❌ Signup error:', error);
+    res.status(500).json({ message: 'Server error during signup' });
   }
 });
 
@@ -114,17 +136,28 @@ app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    console.log('🔐 Login attempt:', email);
+
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+
     // Find user
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      console.log('❌ User not found:', email);
+      return res.status(400).json({ message: 'Invalid email or password' });
     }
 
     // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      console.log('❌ Invalid password for:', email);
+      return res.status(400).json({ message: 'Invalid email or password' });
     }
+
+    console.log('✅ Login successful:', user.email);
 
     // Generate token
     const token = jwt.sign(
@@ -143,7 +176,8 @@ app.post('/api/auth/login', async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('❌ Login error:', error);
+    res.status(500).json({ message: 'Server error during login' });
   }
 });
 
@@ -161,13 +195,15 @@ app.post('/api/policies/purchase', authenticateToken, async (req, res) => {
     });
 
     await policy.save();
+    console.log('✅ Policy purchased:', policy.policyName, 'by', req.user.username);
 
     res.status(201).json({
       message: 'Policy purchased successfully',
       policy
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('❌ Policy purchase error:', error);
+    res.status(500).json({ message: 'Server error during policy purchase' });
   }
 });
 
@@ -177,16 +213,29 @@ app.get('/api/policies/user', authenticateToken, async (req, res) => {
     const policies = await Policy.find({ userId: req.user.userId });
     res.json(policies);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('❌ Get policies error:', error);
+    res.status(500).json({ message: 'Server error fetching policies' });
   }
 });
 
-// Get all files
+// Get all users (for debugging - remove in production)
+app.get('/api/debug/users', async (req, res) => {
+  try {
+    const users = await User.find({}, { password: 0 }); // Exclude passwords
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Catch all for frontend routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📱 Frontend: http://localhost:${PORT}`);
+  console.log(`🔗 API Base: http://localhost:${PORT}/api`);
 });
