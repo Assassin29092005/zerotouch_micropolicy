@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZeroTouch MicroPolicy</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="data:application/json,```ame':'ZeroTouch MicroPolicy','short_name':'ZeroTouch','```rt_url':'./','display':'standalone','backgroun```olor':'%23f8faf8','theme_color':'%23218396'}">
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#218396">
 </head>
 <body>
@@ -23,7 +23,7 @@
                     <button class="nav-link" data-page="dashboard">Dashboard</button>
                     <button class="nav-link" data-page="customer-login" id="customer-nav-link">Login</button>
                     <button class="nav-link" data-page="admin-login" id="admin-nav-link">Admin</button>
-                    <button class="nav-link logout-btn" id="logout-btn" style="display: none;">Logout```utton>
+                    <button class="nav-link logout-btn" id="logout-btn" style="display: none;">Logout</button>
                 </nav>
             </div>
         </div>
@@ -37,20 +37,20 @@
                     <h1 class="hero-title">Buy in seconds. Learn in AR. Get paid without pressing a button.</h1>
                     <p class="hero-subtitle">Experience the future of micro-insurance with instant payouts powered by AI and blockchain technology.</p>
                     <div class="hero-features">
-                        <div class="```ture">
+                        <div class="feature">
                             <span class="feature-icon">⚡</span>
                             <span>Instant Purchase</span>
                         </div>
                         <div class="feature">
-                            <span class```eature-icon">🔒</span>
+                            <span class="feature-icon">🔒</span>
                             <span>Fraud Resistant</span>
                         </div>
                         <div class="feature">
-                            <span class```eature-icon">🚀</span>
+                            <span class="feature-icon">🚀</span>
                             <span>Zero Touch Claims</span>
                         </div>
                     </div>
-                    <button class="btn```n-primary btn-large" id="get-started-btn">Get Started</button>
+                    <button class="btn btn-primary btn-large" id="get-started-btn">Get Started</button>
                 </div>
             </div>
         </section>
@@ -91,26 +91,26 @@
                 <div class="auth-card">
                     <div class="auth-header">
                         <h1>📝 Create Account</h1>
-                        <p>Join ZeroTouch MicroPolicy```>
+                        <p>Join ZeroTouch MicroPolicy</p>
                     </div>
-                    <form class="auth```rm" id="customer-signup-form">
+                    <form class="auth-form" id="customer-signup-form">
                         <div class="form-group">
-                            <label for="signup```ername">Username</label>
+                            <label for="signup-username">Username</label>
                             <input type="text" id="signup-username" name="username" required placeholder="Choose a username">
                         </div>
                         <div class="form-group">
                             <label for="signup-email">Email</label>
-                            <input type="email" id="signup-email" name="email" required placeholder```nter your email">
+                            <input type="email" id="signup-email" name="email" required placeholder="Enter your email">
                         </div>
                         <div class="form-group">
                             <label for="signup-password">Password</label>
-                            <input type="password" id="```nup-password" name="password" required placeholder="Create a password"```nlength="6">
+                            <input type="password" id="signup-password" name="password" required placeholder="Create a password" minlength="6">
                         </div>
                         <div class="form-group">
                             <label for="confirm-password">Confirm Password</label>
-                            <input type="password" id="confirm-password" name="confirmPassword" required placeholder="Confirm your```ssword">
+                            <input type="password" id="confirm-password" name="confirmPassword" required placeholder="Confirm your password">
                         </div>
-                        <button type="submit```lass="btn btn-primary btn-large">Create Account</button>
+                        <button type="submit" class="btn btn-primary btn-large">Create Account</button>
                         <div class="auth-switch">
                             <p>Already have an account? <a href="#" id="show-login">Login here</a></p>
                         </div>
@@ -151,12 +151,12 @@
                         <div class="ar-step" data-step="2">
                             <div class="ar-icon">🌐</div>
                             <h3>Event Detection</h3>
-                            <p>API validates the triggering event automatically```>
+                            <p>API validates the triggering event automatically</p>
                         </div>
                         <div class="ar-step" data-step="3">
                             <div class="ar-icon">💰</div>
                             <h3>Instant Payout</h3>
-                            <p>Money```ansfers to your account immediately</p>
+                            <p>Money transfers to your account immediately</p>
                         </div>
                     </div>
                     <div class="ar-controls">
@@ -182,11 +182,12 @@
                 <div class="dashboard-stats">
                     <div class="stat-card">
                         <h3 id="active-policies-count">0</h3>
-                        <p>Active Policies```>
+                        <p>Active Policies</p>
                     </div>
                     <div class="stat-card">
                         <h3 id="total-coverage">₹0</h3>
-                        <p>Total Coverage</p```                   </div>
+                        <p>Total Coverage</p>
+                    </div>
                     <div class="stat-card">
                         <h3 id="payouts-received">₹0</h3>
                         <p>Payouts Received</p>
@@ -206,7 +207,7 @@
                 <div class="auth-card">
                     <div class="auth-header">
                         <h1>🔐 Admin Access</h1>
-                        <p>Login to access event simulation controls```>
+                        <p>Login to access event simulation controls</p>
                     </div>
                     <form class="auth-form" id="admin-login-form">
                         <div class="form-group">
@@ -215,11 +216,11 @@
                         </div>
                         <div class="form-group">
                             <label for="admin-password">Password</label>
-                            <input type```assword" id="admin-password" name="password" required placeholder="```er admin password">
+                            <input type="password" id="admin-password" name="password" required placeholder="Enter admin password">
                         </div>
-                        <button type```ubmit" class="btn btn-primary btn-large">Login</button>
-                        <div class="demo```edentials">
-                            <small>Demo credentials:```min / zerotouch123</small>
+                        <button type="submit" class="btn btn-primary btn-large">Login</button>
+                        <div class="demo-credentials">
+                            <small>Demo credentials: admin / zerotouch123</small>
                         </div>
                     </form>
                 </div>
@@ -232,9 +233,9 @@
         <div class="container">
             <div class="demo-header">
                 <h1>🎭 Admin Control Panel</h1>
-                <p>Simulate events to demonstrate instant```youts and fraud prevention</p>
+                <p>Simulate events to demonstrate instant payouts and fraud prevention</p>
                 <div class="admin-info">
-                    <span>👤 Logged in as: <strong```="admin-user-display">Admin</strong></span>
+                    <span>👤 Logged in as: <strong id="admin-user-display">Admin</strong></span>
                     <button class="btn btn-secondary btn-small" id="admin-logout">Logout</button>
                 </div>
             </div>
@@ -246,7 +247,7 @@
                             🌧️ Trigger Rain Event
                         </button>
                         <button class="btn btn-primary" data-event="flight">
-                            ✈️ Trigger Flight```lay
+                            ✈️ Trigger Flight Delay
                         </button>
                         <button class="btn btn-primary" data-event="traffic">
                             🚗 Trigger Traffic Jam
@@ -259,7 +260,7 @@
                 <div class="demo-log" id="demo-log">
                     <h3>Event Log</h3>
                     <div class="log-entries" id="log-entries">
-                        <p class="placeholder">Click buttons above to simulate events...```>
+                        <p class="placeholder">Click buttons above to simulate events...</p>
                     </div>
                 </div>
             </div>

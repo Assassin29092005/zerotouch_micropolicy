@@ -1,0 +1,8 @@
+{
+  "name": "ZeroTouch MicroPolicy",
+  "short_name": "ZeroTouch",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f8faf8",
+  "theme_color": "#218396"
+}
