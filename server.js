@@ -239,3 +239,117 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`📱 Frontend: http://localhost:${PORT}`);
   console.log(`🔗 API Base: http://localhost:${PORT}/api`);
 });
+
+// Event Simulation Endpoint (Admin only)
+app.post('/api/admin/simulate-event', async (req, res) => {
+  try {
+    const { eventType, description, payout } = req.body;
+    
+    console.log('🎭 Admin triggered event:', eventType);
+    
+    // Find matching policies based on event type
+    let policyTypeToMatch;
+    switch(eventType) {
+      case 'rain':
+        policyTypeToMatch = 'Rain Delay Cover';
+        break;
+      case 'flight':
+        policyTypeToMatch = 'Flight Delay Cover';
+        break;
+      case 'traffic':
+        policyTypeToMatch = 'Traffic Jam Cover';
+        break;
+      case 'fake':
+        // For fake events, don't process any policies
+        return res.json({
+          message: 'Fraud attempt blocked',
+          affectedUsers: 0,
+          totalPayout: 0,
+          eventType: 'fraud_blocked'
+        });
+      default:
+        return res.status(400).json({ message: 'Invalid event type' });
+    }
+
+    // Find all active policies of the matching type
+    const matchingPolicies = await Policy.find({
+      policyName: policyTypeToMatch,
+      status: 'active'
+    }).populate('userId', 'username email');
+
+    console.log(`🔍 Found ${matchingPolicies.length} matching policies for ${policyTypeToMatch}`);
+
+    if (matchingPolicies.length === 0) {
+      return res.json({
+        message: 'Event detected but no matching active policies found',
+        affectedUsers: 0,
+        totalPayout: 0,
+        eventType: eventType
+      });
+    }
+
+    // Update all matching policies to 'paid' status
+    const policyIds = matchingPolicies.map(p => p._id);
+    await Policy.updateMany(
+      { _id: { $in: policyIds } },
+      { 
+        status: 'paid', 
+        paidAt: new Date(),
+        paidAmount: matchingPolicies[0].price,
+        eventDescription: description
+      }
+    );
+
+    // Calculate total payout
+    const totalPayout = matchingPolicies.reduce((sum, policy) => sum + policy.price, 0);
+    const affectedUsers = matchingPolicies.length;
+
+    console.log(`💰 Processed payouts: ₹${totalPayout} to ${affectedUsers} users`);
+
+    // Return details for admin
+    const affectedUserDetails = matchingPolicies.map(policy => ({
+      username: policy.userId.username,
+      email: policy.userId.email,
+      policyName: policy.policyName,
+      payout: policy.price
+    }));
+
+    res.json({
+      message: `Event processed successfully! ₹${totalPayout} paid to ${affectedUsers} customers`,
+      affectedUsers: affectedUsers,
+      totalPayout: totalPayout,
+      eventType: eventType,
+      userDetails: affectedUserDetails
+    });
+
+  } catch (error) {
+    console.error('❌ Event simulation error:', error);
+    res.status(500).json({ message: 'Server error during event simulation' });
+  }
+});
+
+// Get customer notifications (for real-time payout notifications)
+app.get('/api/customer/notifications', authenticateToken, async (req, res) => {
+  try {
+    // Get recently paid policies for this user
+    const recentPayouts = await Policy.find({
+      userId: req.user.userId,
+      status: 'paid',
+      paidAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // Last 24 hours
+    }).sort({ paidAt: -1 });
+
+    const notifications = recentPayouts.map(policy => ({
+      id: policy._id,
+      message: `Payout received! ₹${policy.paidAmount || policy.price} for ${policy.policyName}`,
+      description: policy.eventDescription || 'Event condition met',
+      amount: policy.paidAmount || policy.price,
+      timestamp: policy.paidAt,
+      type: 'payout'
+    }));
+
+    res.json(notifications);
+  } catch (error) {
+    console.error('❌ Get notifications error:', error);
+    res.status(500).json({ message: 'Server error fetching notifications' });
+  }
+});

@@ -10,7 +10,7 @@ class ZeroTouchApp {
         this.customerData = JSON.parse(localStorage.getItem('zerotouch_customer_data') || 'null');
         this.apiBaseUrl = window.location.hostname === 'localhost' ? 
             'http://localhost:5000' : 
-            'https://zerotouch-backend.onrender.com';
+            'https://your-actual-backend-url.onrender.com';
         
         this.adminCredentials = {
             username: 'admin',
@@ -490,6 +490,111 @@ async handleCustomerSignup() {
         }
     }
 
+
+    async simulateEvent(eventType) {
+        if (!this.isAdminLoggedIn) {
+            this.showToast('Admin access required to trigger events', 'error');
+            this.showPage('admin-login');
+            return;
+        }
+
+        const event = this.demoEvents.find(e => e.type === eventType);
+        if (!event) return;
+
+        this.showLoading();
+
+        try {
+            // Call backend API to process the event
+            const response = await fetch(`${this.apiBaseUrl}/api/admin/simulate-event`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    eventType: eventType,
+                    description: event.description,
+                    payout: event.payout
+                })
+            });
+
+            const data = await response.json();
+        
+            if (response.ok) {
+                const isSuccess = eventType !== 'fake';
+            
+                // Add to log
+                const logEntry = {
+                    timestamp: new Date().toLocaleString(),
+                    description: event.description,
+                    policyType: event.policyType,
+                    payout: isSuccess ? `₹${data.totalPayout} to ${data.affectedUsers} customers` : 'BLOCKED',
+                    type: isSuccess ? 'success' : 'error',
+                    triggeredBy: 'Admin',
+                    details: isSuccess ? `${data.affectedUsers} users received payouts` : 'Fraud attempt detected'
+                };
+
+                this.addLogEntry(logEntry);
+            
+                if (isSuccess) {
+                    if (data.affectedUsers > 0) {
+                        this.showToast(
+                            `✅ Event processed! ${data.affectedUsers} customers received ₹${data.totalPayout} total payouts`, 
+                            'success'
+                        );
+                    } else {
+                        this.showToast(
+                            `⚠️ Event detected but no active policies found for ${event.policyType}`, 
+                            'warning'
+                        );
+                    }
+                } else {
+                    this.showToast('🚫 Fraud attempt blocked!', 'error');
+                }
+
+            } else {
+                throw new Error(data.message || 'Event processing failed');
+            }
+
+        } catch (error) {
+            console.error('Event simulation error:', error);
+        
+            // Fallback to local simulation for demo
+            const isSuccess = eventType !== 'fake';
+            const logEntry = {
+                timestamp: new Date().toLocaleString(),
+                description: event.description + ' (Demo Mode)',
+                policyType: event.policyType,
+                payout: isSuccess ? '₹10 (Demo)' : 'BLOCKED',
+                type: isSuccess ? 'success' : 'error',
+                triggeredBy: 'Admin (Offline)',
+                details: 'Backend not available - demo simulation'
+            };
+
+            this.addLogEntry(logEntry);
+        
+            if (isSuccess) {
+                // Update local policies if any exist
+                const localPolicies = JSON.parse(localStorage.getItem('zerotouch_policies') || '[]');
+                const matchingPolicy = localPolicies.find(p => 
+                    p.name === event.policyType.replace(' Cover', ' Cover') && p.status === 'active'
+                );
+            
+                if (matchingPolicy) {
+                    matchingPolicy.status = 'paid';
+                    localStorage.setItem('zerotouch_policies', JSON.stringify(localPolicies));
+                    this.showToast(`💰 Demo payout: ${event.payout} (local simulation)`, 'success');
+                } else {
+                    this.showToast(`⚠️ Event triggered but no active ${event.policyType} found`, 'warning');
+                }
+            } else {
+                this.showToast('🚫 Fraud attempt blocked!', 'error');
+            }
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+
     async purchasePolicy() {
         if (!this.selectedPolicy || !this.isCustomerLoggedIn) return;
 
@@ -765,67 +870,61 @@ async handleCustomerSignup() {
         }
     }
 
-    simulateEvent(eventType) {
-        if (!this.isAdminLoggedIn) {
-            this.showToast('Admin access required to trigger events', 'error');
-            this.showPage('admin-login');
-            return;
-        }
-
-        const event = this.demoEvents.find(e => e.type === eventType);
-        if (!event) return;
-
-        this.showLoading();
-
-        setTimeout(() => {
-            this.hideLoading();
-            
-            const isSuccess = eventType !== 'fake';
-            const logEntry = {
-                timestamp: new Date().toLocaleString(),
-                description: event.description,
-                policyType: event.policyType,
-                payout: event.payout,
-                type: isSuccess ? 'success' : 'error',
-                triggeredBy: 'Admin'
-            };
-
-            this.addLogEntry(logEntry);
-            
-            if (isSuccess) {
-                this.showToast(`Event detected! ${event.payout} paid instantly`, 'success');
-                // Update a policy status if exists
-                if (this.userPolicies.length > 0) {
-                    const activePolicy = this.userPolicies.find(p => p.status === 'active');
-                    if (activePolicy) {
-                        activePolicy.status = 'paid';
-                        localStorage.setItem('zerotouch_policies', JSON.stringify(this.userPolicies));
-                        this.updateDashboard();
-                    }
-                }
-            } else {
-                this.showToast('Fraud attempt blocked!', 'error');
+    async checkCustomerNotifications() {
+    if (!this.isCustomerLoggedIn) return;
+    
+    try {
+        const token = localStorage.getItem('zerotouch_customer_token');
+        if (token === 'demo_token' || token === 'local_token') return; // Skip for demo users
+        
+        const response = await fetch(`${this.apiBaseUrl}/api/customer/notifications`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
             }
-        }, 1500);
+        });
+
+        if (response.ok) {
+            const notifications = await response.json();
+            
+            // Show payout notifications to customer
+            notifications.forEach(notification => {
+                if (notification.type === 'payout') {
+                    this.showToast(
+                        `💰 ${notification.message}`, 
+                        'success'
+                    );
+                }
+            });
+            
+            // Refresh dashboard if there are payouts
+            if (notifications.length > 0) {
+                this.loadUserPolicies();
+            }
+        }
+    } catch (error) {
+        console.log('Could not check notifications (offline mode)');
     }
+}
 
     addLogEntry(entry) {
-        const logEntries = document.getElementById('log-entries');
-        if (!logEntries) return;
+    const logEntries = document.getElementById('log-entries');
+    if (!logEntries) return;
 
-        const placeholder = logEntries.querySelector('.placeholder');
-        if (placeholder) placeholder.remove();
+    const placeholder = logEntries.querySelector('.placeholder');
+    if (placeholder) placeholder.remove();
 
-        const entryElement = document.createElement('div');
-        entryElement.className = `log-entry ${entry.type}`;
-        entryElement.innerHTML = `
-            <div class="timestamp">${entry.timestamp}${entry.triggeredBy ? ` - Triggered by ${entry.triggeredBy}` : ''}</div>
-            <div class="event-description">${entry.description}</div>
-            <div class="payout-amount">${entry.payout}</div>
-        `;
+    const entryElement = document.createElement('div');
+    entryElement.className = `log-entry ${entry.type}`;
+    entryElement.innerHTML = `
+        <div class="timestamp">${entry.timestamp}${entry.triggeredBy ? ` - ${entry.triggeredBy}` : ''}</div>
+        <div class="event-description">${entry.description}</div>
+        <div class="payout-amount">${entry.payout}</div>
+        ${entry.details ? `<div class="event-details">${entry.details}</div>` : ''}
+    `;
 
-        logEntries.insertBefore(entryElement, logEntries.firstChild);
-    }
+    logEntries.insertBefore(entryElement, logEntries.firstChild);
+}
+
 
     showLoading() {
         const loadingOverlay = document.getElementById('loading-overlay');
