@@ -280,6 +280,22 @@ class ZeroTouchApp {
 
         this.clearFormErrors('customer-login-form');
 
+        // Demo login check
+        if (email === 'demo@test.com' && password === 'password123') {
+            const demoCustomer = JSON.parse(localStorage.getItem('demo_customer'));
+            this.isCustomerLoggedIn = true;
+            localStorage.setItem('zerotouch_customer_token', 'demo_token');
+            localStorage.setItem('zerotouch_customer_data', JSON.stringify(demoCustomer));
+            this.customerData = demoCustomer;
+
+            this.updateCustomerUI();
+            this.loadUserPolicies();
+            this.showToast('Demo login successful!', 'success');
+            this.showPage('dashboard');
+            document.getElementById('customer-login-form').reset();
+            return;
+        }
+
         try {
             this.showLoading();
             const response = await fetch(`${this.apiBaseUrl}/api/auth/login`, {
@@ -308,7 +324,8 @@ class ZeroTouchApp {
                 this.showToast(data.message, 'error');
             }
         } catch (error) {
-            this.showToast('Network error. Please try again.', 'error');
+            this.showFormError('customer-login-form', 'Network error. Using demo mode.');
+            this.showToast('Backend not available. Try demo credentials: demo@test.com / password123', 'warning');
             console.error('Login error:', error);
         } finally {
             this.hideLoading();
@@ -409,6 +426,13 @@ class ZeroTouchApp {
 
         try {
             const token = localStorage.getItem('zerotouch_customer_token');
+            if (token === 'demo_token' || token === 'local_token') {
+                // Load from localStorage for demo
+                this.userPolicies = JSON.parse(localStorage.getItem('zerotouch_policies') || '[]');
+                this.updateDashboard();
+                return;
+            }
+
             const response = await fetch(`${this.apiBaseUrl}/api/policies/user`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -424,6 +448,7 @@ class ZeroTouchApp {
             console.error('Error loading policies:', error);
             // Fallback to localStorage for demo
             this.userPolicies = JSON.parse(localStorage.getItem('zerotouch_policies') || '[]');
+            this.updateDashboard();
         }
     }
 
