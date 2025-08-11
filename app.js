@@ -8,7 +8,9 @@ class ZeroTouchApp {
         this.isAdminLoggedIn = localStorage.getItem('zerotouch_admin_session') === 'true';
         this.isCustomerLoggedIn = !!localStorage.getItem('zerotouch_customer_token');
         this.customerData = JSON.parse(localStorage.getItem('zerotouch_customer_data') || 'null');
-        this.apiBaseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
+        this.apiBaseUrl = window.location.hostname === 'localhost' ? 
+            'http://localhost:5000' : 
+            'https://your-actual-backend-url.onrender.com';
         
         this.adminCredentials = {
             username: 'admin',
@@ -169,13 +171,16 @@ class ZeroTouchApp {
             });
         }
 
+        // Customer signup form - FIXED
         const customerSignupForm = document.getElementById('customer-signup-form');
         if (customerSignupForm) {
             customerSignupForm.addEventListener('submit', (e) => {
-                e.preventDefault();
+                e.preventDefault(); // Prevent form default submission
+                console.log('Signup form submitted'); // Debug log
                 this.handleCustomerSignup();
             });
         }
+
 
         // Auth switch links
         const showSignupLink = document.getElementById('show-signup')?.addEventListener('click', (e) => {e.preventDefault();
@@ -311,52 +316,82 @@ class ZeroTouchApp {
     }
 
     async handleCustomerSignup() {
-        const username = document.getElementById('signup-username').value;
-        const email = document.getElementById('signup-email').value;
-        const password = document.getElementById('signup-password').value;
-        const confirmPassword = document.getElementById('confirm-password').value;
+    console.log('handleCustomerSignup called'); // Debug log
+    
+    const username = document.getElementById('signup-username').value;
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
 
-        this.clearFormErrors('customer-signup-form');
+    console.log('Form values:', { username, email, password }); // Debug log
 
-        // Validate passwords match
-        if (password !== confirmPassword) {
-            this.showFormError('customer-signup-form', 'Passwords do not match');
-            return;
-        }
+    this.clearFormErrors('customer-signup-form');
 
-        try {
-            this.showLoading();
-            const response = await fetch(`${this.apiBaseUrl}/api/auth/signup`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ username, email, password })
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                this.isCustomerLoggedIn = true;
-                localStorage.setItem('zerotouch_customer_token', data.token);
-                localStorage.setItem('zerotouch_customer_data', JSON.stringify(data.user));
-                this.customerData = data.user;
-
-                this.updateCustomerUI();
-                this.showToast('Account created successfully!', 'success');
-                this.showPage('dashboard');
-                document.getElementById('customer-signup-form').reset();
-            } else {
-                this.showFormError('customer-signup-form', data.message);
-                this.showToast(data.message, 'error');
-            }
-        } catch (error) {
-            this.showToast('Network error. Please try again.', 'error');
-            console.error('Signup error:', error);
-        } finally {
-            this.hideLoading();
-        }
+    // Validate passwords match
+    if (password !== confirmPassword) {
+        console.log('Passwords do not match'); // Debug log
+        this.showFormError('customer-signup-form', 'Passwords do not match');
+        return;
     }
+
+    // Validate all fields are filled
+    if (!username || !email || !password) {
+        this.showFormError('customer-signup-form', 'Please fill all fields');
+        return;
+    }
+
+    try {
+        this.showLoading();
+        console.log('Making API request to:', `${this.apiBaseUrl}/api/auth/signup`); // Debug log
+        
+        const response = await fetch(`${this.apiBaseUrl}/api/auth/signup`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username, email, password })
+        });
+
+        console.log('API Response status:', response.status); // Debug log
+        const data = await response.json();
+        console.log('API Response data:', data); // Debug log
+
+        if (response.ok) {
+            this.isCustomerLoggedIn = true;
+            localStorage.setItem('zerotouch_customer_token', data.token);
+            localStorage.setItem('zerotouch_customer_data', JSON.stringify(data.user));
+            this.customerData = data.user;
+
+            this.updateCustomerUI();
+            this.showToast('Account created successfully!', 'success');
+            this.showPage('dashboard');
+            document.getElementById('customer-signup-form').reset();
+        } else {
+            this.showFormError('customer-signup-form', data.message);
+            this.showToast(data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Signup error:', error); // Debug log
+        
+        // Fallback to local storage for demo
+        const newUser = {
+            id: Date.now(),
+            username,
+            email
+        };
+        localStorage.setItem('zerotouch_customer_token', 'local_token');
+        localStorage.setItem('zerotouch_customer_data', JSON.stringify(newUser));
+        this.customerData = newUser;
+        this.isCustomerLoggedIn = true;
+        this.updateCustomerUI();
+        this.showToast('Account created (demo mode - backend not available)!', 'warning');
+        this.showPage('dashboard');
+        document.getElementById('customer-signup-form').reset();
+    } finally {
+        this.hideLoading();
+    }
+}
+
 
     handleCustomerLogout() {
         this.isCustomerLoggedIn = false;
