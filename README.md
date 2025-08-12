@@ -1,41 +1,42 @@
-# ⚡ ZeroTouch MicroPolicy
+# ZeroTouch Micropolicy
 
-Buy in seconds. Learn in AR. Get paid without pressing a button.
+A comprehensive micro-insurance platform that allows users to purchase event-based policies and provides administrators with tools to simulate events and manage claims.
 
-## Features
-- Instant micro-policy purchase
-- AR explainer for users
-- Auto payouts on API-verified events
-- Fraud prevention via blockchain-style hashes
+## 🚀 Features
 
-## Architecture
-zerotouch-micropolicy/
-├── frontend/   # HTML, CSS, JS (PWA)
-├── backend/    # Node.js (Express + MongoDB)
-└── docs/       # API & deployment documentation
+### User Features
+- **Registration & Authentication**: Secure user signup and login
+- **Policy Marketplace**: Browse and purchase micro-policies
+- **Dashboard**: View purchased policies and claim status
+- **Automatic Payouts**: Instant compensation when covered events occur
 
-## Tech Stack
-Frontend: HTML, CSS, JS
-Backend: Node.js, Express, MongoDB
-Auth: JWT + bcrypt
-Security: CORS, validation, rate limiting
+### Admin Features
+- **Admin Dashboard**: Comprehensive analytics and management tools
+- **Event Simulation**: Trigger events to test policy payouts
+- **User Management**: View and manage all users
+- **Policy Analytics**: Track policy sales and claims
 
-## Demo Credentials
-Customer: demo@test.com / password123
-Admin: admin / zerotouch123
+### Policy Types
+- 🌧️ **Rain Delay Cover** - $299
+- ✈️ **Flight Delay Cover** - $499
+- 🚗 **Traffic Jam Cover** - $199
+- 📦 **Package Delay Cover** - $149
 
-## Local Setup
-git clone https://github.com/...
-cd zerotouch-micropolicy
+## 🛠 Technology Stack
 
-# Backend
-cd backend
-npm install
-cp .env.example .env
-npm start
+### Backend
+- **Node.js** with Express.js
+- **MongoDB** with Mongoose
+- **JWT** for authentication
+- **bcryptjs** for password hashing
+- **express-validator** for input validation
 
-# Visit frontend at http://localhost:5000
+### Frontend
+- **React.js** with hooks
+- **Material-UI** for components
+- **React Router** for navigation
+- **Axios** for API calls
+- **Context API** for state management
 
-## Documentation
-- [API Reference](docs/API.md)
-- [Deployment Guide](docs/deployment.md)
+## 📁 Project Structure
+

@@ -1,29 +1,16 @@
 const express = require('express');
-const authController = require('../controllers/authController');
-const { validateSignup, validateLogin } = require('../middleware/validation');
-const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const authMiddleware = require('../middleware/auth');
 
-
-// Public routes
-router.post('/signup', validateSignup, authController.signup);
-router.post('/login', validateLogin, authController.login);
-// Admin signup route with passkey
-router.post('/admin/signup', [
-    body('username')
-        .isLength({ min: 3, max: 30 })
-        .withMessage('Username must be 3-30 characters'),
-    body('email')
-        .isEmail()
-        .normalizeEmail()
-        .withMessage('Valid email required'),
-    body('password')
-        .isLength({ min: 6 })
-        .withMessage('Password must be at least 6 characters'),
-    body('passkey')
-        .notEmpty()
-        .withMessage('Admin passkey required')
+// User registration
+router.post('/register', [
+    body('username').isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
+    body('email').isEmail().withMessage('Please enter a valid email'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
 ], async (req, res) => {
     try {
         const errors = validationResult(req);
@@ -35,66 +22,146 @@ router.post('/admin/signup', [
             });
         }
 
-        const { username, email, password, passkey } = req.body;
-        
-        // Verify admin passkey (set this in your .env)
-        const ADMIN_PASSKEY = process.env.ADMIN_PASSKEY || 'ZeroTouch2024!';
-        
-        if (passkey !== ADMIN_PASSKEY) {
-            return res.status(403).json({
-                success: false,
-                message: 'Invalid admin passkey'
-            });
-        }
+        const { username, email, password } = req.body;
 
-        // Check if admin already exists
-        const existingAdmin = await Admin.findOne({
+        // Check if user already exists
+        const existingUser = await User.findOne({
             $or: [{ email }, { username }]
         });
 
-        if (existingAdmin) {
+        if (existingUser) {
             return res.status(400).json({
                 success: false,
-                message: 'Admin with this email or username already exists'
+                message: 'User with this email or username already exists'
             });
         }
 
-        // Hash password and create admin
+        // Hash password
         const hashedPassword = await bcrypt.hash(password, 12);
-        
-        const admin = new Admin({
+
+        // Create user
+        const user = new User({
             username,
             email,
-            password: hashedPassword,
-            role: 'admin',
-            createdAt: new Date()
+            password: hashedPassword
         });
 
-        await admin.save();
-        
+        await user.save();
+
+        // Generate JWT token
+        const token = jwt.sign(
+            { userId: user._id, username: user.username, role: 'user' },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
         res.status(201).json({
             success: true,
-            message: 'Admin account created successfully',
-            admin: {
-                id: admin._id,
-                username: admin.username,
-                email: admin.email,
-                role: admin.role
+            message: 'User registered successfully',
+            token,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role
             }
         });
 
     } catch (error) {
-        console.error('Admin signup error:', error);
+        console.error('Registration error:', error);
         res.status(500).json({
             success: false,
-            message: 'Server error during admin signup'
+            message: 'Server error during registration'
         });
     }
 });
 
+// User login
+router.post('/login', [
+    body('email').isEmail().withMessage('Please enter a valid email'),
+    body('password').notEmpty().withMessage('Password is required')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Validation failed',
+                errors: errors.array()
+            });
+        }
 
-// Protected routes
-router.get('/profile', authenticateToken, authController.getProfile);
-router.put('/profile', authenticateToken, authController.updateProfile);
+        const { email, password } = req.body;
+
+        // Find user
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid credentials'
+            });
+        }
+
+        // Check password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid credentials'
+            });
+        }
+
+        // Generate JWT token
+        const token = jwt.sign(
+            { userId: user._id, username: user.username, role: 'user' },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
+        res.json({
+            success: true,
+            message: 'Login successful',
+            token,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            }
+        });
+
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error during login'
+        });
+    }
+});
+
+// Get current user profile
+router.get('/profile', authMiddleware, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.userId).select('-password');
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            user
+        });
+
+    } catch (error) {
+        console.error('Get profile error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error'
+        });
+    }
+});
 
 module.exports = router;
