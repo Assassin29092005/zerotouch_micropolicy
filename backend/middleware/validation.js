@@ -20,7 +20,7 @@ exports.validateSignup = [
   body('username')
     .isLength({ min: 3, max: 30 })
     .withMessage('Username must be 3-30 characters')
-    .matches(/^[a-zA-Z0-9_]+$/)
+    .matches(/^[A-Za-z\s]+$/)
     .withMessage('Username can only contain letters, numbers, and underscores'),
   
   body('email')
@@ -30,11 +30,8 @@ exports.validateSignup = [
   
   body('password')
     .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters')
-    .matches(/^(?=.*[a-zA-Z])(?=.*\d)/)
-    .withMessage('Password must contain at least one letter and one number'),
-  
-  handleValidationErrors
+    .withMessage('Password must be at least 6 characters'),  
+ handleValidationErrors
 ];
 
 exports.validateLogin = [
