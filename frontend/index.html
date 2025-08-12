@@ -204,72 +204,145 @@
     </main>
 
     <!-- Admin Login Page -->
-    <main class="page" id="admin-login-page">
-        <div class="container">
-            <div class="auth-container">
-                <div class="auth-card">
-                    <div class="auth-header">
-                        <h1>🔐 Admin Access</h1>
-                        <p>Login to access event simulation controls</p>
+    <div id="admin-login-page" class="page">
+        <div class="auth-container">
+            <div class="auth-card">
+                <h2>🔐 Admin Access</h2>
+                <form id="admin-login-form">
+                    <div class="form-group">
+                        <input type="text" id="admin-username" placeholder="Admin Username" required>
                     </div>
-                    <form class="auth-form" id="admin-login-form">
-                        <div class="form-group">
-                            <label for="admin-username">Username</label>
-                            <input type="text" id="admin-username" name="username" required placeholder="Enter admin username">
-                        </div>
-                        <div class="form-group">
-                            <label for="admin-password">Password</label>
-                            <input type="password" id="admin-password" name="password" required placeholder="Enter admin password">
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-large">Login</button>
-                        <div class="demo-credentials">
-                            <small>Demo credentials: admin / zerotouch123</small>
-                        </div>
+                    <div class="form-group">
+                        <input type="password" id="admin-password" placeholder="Admin Password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Login as Admin</button>
+                    <div class="error-message" style="display: none;"></div>
+                </form>
+            
+                <!-- ADD THIS SIGNUP LINK -->
+                <div class="auth-switch">
+                    <p>Need admin access? <a href="#" id="show-admin-signup">Request Admin Account</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD NEW ADMIN SIGNUP PAGE -->
+    <div id="admin-signup-page" class="page">
+        <div class="auth-container">
+            <div class="auth-card">
+                <h2>🔑 Admin Signup</h2>
+                <form id="admin-signup-form">
+                    <div class="form-group">
+                        <input type="text" id="admin-signup-username" placeholder="Admin Username" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" id="admin-signup-email" placeholder="Admin Email" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="admin-signup-password" placeholder="Admin Password" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="admin-passkey" placeholder="Admin Passkey (Required)" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Admin Account</button>
+                    <div class="error-message" style="display: none;"></div>
+                </form>
+                <div class="auth-switch">
+                    <p>Already have admin access? <a href="#" id="show-admin-login">Back to Login</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced admin demo page -->
+    <div id="demo-page" class="page">
+        <div class="demo-container">
+            <div class="demo-header">
+                <h2>🎯 Admin Control Panel</h2>
+                <div class="admin-user">
+                    <span id="admin-user-display">Admin</span>
+                    <button id="admin-logout" class="btn btn-secondary">Logout</button>
+                </div>
+            </div>
+
+            <!-- POLICY STATISTICS SECTION -->
+            <div class="admin-stats-section">
+                <h3>📊 Policy Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h4>Rain Delay Cover</h4>
+                     <span id="rain-policy-count">0</span> active
+                </div>
+                    <div class="stat-card">
+                     <h4>Flight Delay Cover</h4>
+                     <span id="flight-policy-count">0</span> active
+                    </div>
+                    <div class="stat-card">
+                        <h4>Traffic Jam Cover</h4>
+                       <span id="traffic-policy-count">0</span> active
+                    </div>
+                   <div class="stat-card">
+                        <h4>Package Delay Cover</h4>
+                        <span id="package-policy-count">0</span> active
+                    </div>
+                </div>
+            </div>
+
+            <!-- POLICY MANAGEMENT SECTION -->
+            <div class="admin-policies-section">
+                <h3>🛠️ Policy Management</h3>
+                <!-- Create New Policy -->
+                <div class="policy-management-card">
+                    <h4>Create New Policy Type</h4>
+                    <form id="create-policy-form">
+                        <input type="text" id="new-policy-name" placeholder="Policy Name" required>
+                        <input type="number" id="new-policy-price" placeholder="Price" required>
+                        <input type="text" id="new-policy-description" placeholder="Description" required>
+                        <input type="text" id="new-policy-icon" placeholder="Icon (emoji)" required>
+                        <button type="submit" class="btn btn-success">Create Policy</button>
                     </form>
                 </div>
-            </div>
-        </div>
-    </main>
 
-    <!-- Demo/Admin Control Panel Page -->
-    <main class="page" id="demo-page">
-        <div class="container">
-            <div class="demo-header">
-                <h1>🎭 Admin Control Panel</h1>
-                <p>Simulate events to demonstrate instant payouts and fraud prevention</p>
-                <div class="admin-info">
-                    <span>👤 Logged in as: <strong id="admin-user-display">Admin</strong></span>
-                    <button class="btn btn-secondary btn-small" id="admin-logout">Logout</button>
-                </div>
-            </div>
-            <div class="demo-content">
-                <div class="demo-section">
-                    <h2>Trigger Events</h2>
-                    <div class="demo-buttons">
-                        <button class="btn btn-primary" data-event="rain">
-                            🌧️ Trigger Rain Event
-                        </button>
-                        <button class="btn btn-primary" data-event="flight">
-                            ✈️ Trigger Flight Delay
-                        </button>
-                        <button class="btn btn-primary" data-event="traffic">
-                            🚗 Trigger Traffic Jam
-                        </button>
-                        <button class="btn btn-danger" data-event="fake">
-                            ❌ Attempt Fake Claim
-                        </button>
-                    </div>
-                </div>
-                <div class="demo-log" id="demo-log">
-                    <h3>Event Log</h3>
-                    <div class="log-entries" id="log-entries">
-                        <p class="placeholder">Click buttons above to simulate events...</p>
+                <!-- Manage Existing Policies -->
+                <div class="policy-management-card">
+                    <h4>Manage Existing Policies</h4>
+                    <div id="admin-policy-list">
+                        <!-- Will be populated dynamically -->
                     </div>
                 </div>
             </div>
-        </div>
-    </main>
 
+            <!-- EVENT SIMULATION SECTION -->
+            <div class="demo-section">
+                <h3>🎮 Event Simulation</h3>
+                <div class="demo-buttons">
+                    <button class="demo-btn rain" data-event="rain">
+                        🌧️ Trigger Rain Event
+                    </button>
+                    <button class="demo-btn flight" data-event="flight">
+                        ✈️ Trigger Flight Delay
+                    </button>
+                    <button class="demo-btn traffic" data-event="traffic">
+                        🚗 Trigger Traffic Jam
+                    </button>
+                    <button class="demo-btn fake" data-event="fake">
+                        🚫 Test Fraud Detection
+                    </button>
+                </div>
+            </div>
+
+            <!-- EVENT LOG -->
+            <div class="demo-log">
+                <h3>📝 Event Log</h3>
+                <div id="log-entries">
+                    <div class="placeholder">No events triggered yet.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
     <!-- Toast Notifications -->
     <div class="toast-container" id="toast-container"></div>
 

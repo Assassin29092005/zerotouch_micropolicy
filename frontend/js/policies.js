@@ -113,43 +113,38 @@ class PolicyManager {
     }
 
     async purchasePolicy() {
-        if (!this.selectedPolicy || !window.authManager.isCustomerLoggedIn) return;
+    if (!this.selectedPolicy || !window.authManager.isCustomerLoggedIn) return;
 
-        this.utils.showLoading();
+    this.utils.showLoading();
 
-        try {
-            const { response, data } = await this.apiClient.purchasePolicy({
-                policyType: this.selectedPolicy.name,
-                policyName: this.selectedPolicy.name,
-                price: this.selectedPolicy.price
-            });
+    try {
+        const { response, data } = await this.apiClient.purchasePolicy({
+            policyType: this.selectedPolicy.name,
+            policyName: this.selectedPolicy.name,
+            price: this.selectedPolicy.price
+        });
 
-            if (data.success) {
-                this.utils.showToast('Policy purchased successfully!', 'success');
-                this.loadUserPolicies();
-                window.navigationManager.showPage('dashboard');
-            } else {
-                throw new Error('Purchase failed');
-            }
-        } catch (error) {
-            // Fallback to localStorage for demo
-            const policy = {
-                _id: Date.now(),
-                ...this.selectedPolicy,
-                userId: window.authManager.customerData?.id,
-                purchaseDate: new Date().toISOString(),
-                status: 'active',
-                blockchainHash: this.utils.generateBlockchainHash()
-            };
-
-            this.userPolicies.push(policy);
-            localStorage.setItem('zerotouch_policies', JSON.stringify(this.userPolicies));
+        if (data.success) {
             this.utils.showToast('Policy purchased successfully!', 'success');
+            await this.loadUserPolicies();         // Reload latest policies
+            window.dashboardManager.updateDashboard();  // Refresh dashboard UI
             window.navigationManager.showPage('dashboard');
-        } finally {
-            this.utils.hideLoading();
+        } else {
+            throw new Error('Purchase failed');
         }
+    } catch (error) {
+        // Fallback to localStorage for demo
+        // After updating policies in localStorage:
+        await this.loadUserPolicies();               // Ensure policies are reloaded
+        window.dashboardManager.updateDashboard();  // Update dashboard
+        this.utils.showToast('Policy purchased successfully!', 'success');
+        window.navigationManager.showPage('dashboard');
+    } finally {
+        this.utils.hideLoading();
     }
+}
+
+
 
     playARAnimation() {
         const steps = document.querySelectorAll('.ar-step');
