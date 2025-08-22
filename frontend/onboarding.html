@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Onboarding - ZeroTouch MicroPolicy</title>
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/layout.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div id="app-wrapper" class="onboarding-page">
+        <div class="onboarding-container">
+            <div class="onboarding-progress">
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <span id="progress-text">Step 1 of 5</span>
+            </div>
+
+            <div id="onboarding-content" class="onboarding-content">
+                <!-- Placeholder for AR Video / Benefits Explanation -->
+                <div class="onboarding-step active">
+                    <div class="step-icon">✨</div>
+                    <h2 class="step-title">Experience Your Policy Benefits!</h2>
+                    <p class="step-description">Watch this short video to see how ZeroTouch makes claims effortless.</p>
+                    <video id="ar-video" width="100%" controls autoplay muted>
+                        <!-- Replace with your actual AR/benefits video URL -->
+                        <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <p class="step-description mt-4">Video will automatically proceed to purchase after completion.</p>
+                </div>
+            </div>
+
+            <div class="onboarding-controls">
+                <button id="prev-btn" class="btn-secondary" onclick="previousStep()" disabled>Previous</button>
+                <button id="next-btn" class="btn-primary" onclick="nextStep()">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+    </div>
+    <div id="toast-container" class="toast-container"></div>
+
+    <div id="success-modal" class="modal-custom success">
+        <div class="modal-custom-content">
+            <div class="modal-custom-header">
+                <span class="modal-custom-icon"><i class="fas fa-check-circle"></i></span>
+                <h3 id="success-modal-title"></h3>
+            </div>
+            <div class="modal-custom-body" id="success-modal-message"></div>
+            <div class="modal-custom-footer">
+                <button class="btn-primary" onclick="closeCustomModal('success-modal')">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="error-modal" class="modal-custom error">
+        <div class="modal-custom-content">
+            <div class="modal-custom-header">
+                <span class="modal-custom-icon"><i class="fas fa-times-circle"></i></span>
+                <h3 id="error-modal-title"></h3>
+            </div>
+            <div class="modal-custom-body" id="error-modal-message"></div>
+            <div class="modal-custom-footer">
+                <button class="btn-primary" onclick="closeCustomModal('error-modal')">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirm-modal" class="modal-custom confirm">
+        <div class="modal-custom-content">
+            <div class="modal-custom-header">
+                <span class="modal-custom-icon"><i class="fas fa-question-circle"></i></span>
+                <h3 id="confirm-modal-title">Confirm Action</h3>
+            </div>
+            <div class="modal-custom-body" id="confirm-modal-message"></div>
+            <div class="modal-custom-footer">
+                <button class="btn-secondary" onclick="confirmModalCallback(false)">Cancel</button>
+                <button class="btn-danger" onclick="confirmModalCallback(true)">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - ZeroTouch MicroPolicy</title>
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/layout.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div id="app-wrapper">
+        <nav class="dashboard-nav">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <h2>ZeroTouch Admin</h2>
+                </div>
+                <div class="nav-links">
+                    <span class="admin-badge">Admin</span>
+                    <button class="btn-secondary" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </nav>
+
+        <main class="dashboard-main">
+            <div class="dashboard-header">
+                <h1>Admin Dashboard</h1>
+            </div>
+
+            <div class="admin-content">
+                <div class="admin-section">
+                    <h3>Policy Management</h3>
+                    <button class="btn-primary" onclick="showAddPolicyModal()">Add New Policy</button>
+                    <div id="admin-policies-list" class="policies-list"></div>
+                </div>
+
+                <div class="admin-section">
+                    <h3>User Management</h3>
+                    <div id="admin-users-list" class="users-list"></div>
+                </div>
+
+                <div class="admin-section">
+                    <h3>Policy Popularity Chart</h3>
+                    <canvas id="popularity-chart" width="400" height="200"></canvas>
+                </div>
+
+                <div class="admin-stats">
+                    <div class="stat-card">
+                        <h4>Total Users</h4>
+                        <span id="total-users">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Total Policies</h4>
+                        <span id="total-policies">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Active Claims</h4>
+                        <span id="active-claims">0</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="add-policy-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Policy</h3>
+                <button class="modal-close" onclick="closeAddPolicyModal()">&times;</button>
+            </div>
+            <form id="add-policy-form" class="modal-form">
+                <div class="form-group">
+                    <label for="policy-name">Policy Name</label>
+                    <input type="text" id="policy-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="policy-type">Policy Type</label>
+                    <select id="policy-type" required>
+                        <option value="device">Device Protection</option>
+                        <option value="travel">Travel Insurance</option>
+                        <option value="event">Event Coverage</option>
+                        <option value="health">Health Coverage</option>
+                        <option value="auto">Auto Protection</option>
+                        <option value="home">Home Security</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="policy-cost">Cost ($)</label>
+                    <input type="number" id="policy-cost" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="policy-description">Description</label>
+                    <textarea id="policy-description" required></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Add Policy</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Policy Modal (NEW) -->
+    <div id="edit-policy-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Policy</h3>
+                <button class="modal-close" onclick="closeEditPolicyModal()">&times;</button>
+            </div>
+            <form id="edit-policy-form" class="modal-form">
+                <input type="hidden" id="edit-policy-id">
+                <div class="form-group">
+                    <label for="edit-policy-name">Policy Name</label>
+                    <input type="text" id="edit-policy-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-policy-type">Policy Type</label>
+                    <select id="edit-policy-type" required>
+                        <option value="device">Device Protection</option>
+                        <option value="travel">Travel Insurance</option>
+                        <option value="event">Event Coverage</option>
+                        <option value="health">Health Coverage</option>
+                        <option value="auto">Auto Protection</option>
+                        <option value="home">Home Security</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-policy-cost">Cost ($)</label>
+                    <input type="number" id="edit-policy-cost" step="0.01" required>
+                </div>
+                 <div class="form-group">
+                    <label for="edit-policy-coverage-amount">Coverage Amount ($)</label>
+                    <input type="number" id="edit-policy-coverage-amount" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-policy-description">Description</label>
+                    <textarea id="edit-policy-description" required></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+    </div>
+    <div id="toast-container" class="toast-container"></div>
+
+    <div id="success-modal" class="modal-custom success">
+        <div class="modal-custom-content">
+            <div class="modal-custom-header">
+                <span class="modal-custom-icon"><i class="fas fa-check-circle"></i></span>
+                <h3 id="success-modal-title"></h3>
+            </div>
+            <div class="modal-custom-body" id="success-modal-message"></div>
+            <div class="modal-custom-footer">
+                <button class="btn-primary" onclick="closeCustomModal('success-modal')">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="error-modal" class="modal-custom error">
+        <div class="modal-custom-content">
+            <div class="modal-custom-header">
+                <span class="modal-custom-icon"><i class="fas fa-times-circle"></i></span>
+                <h3 id="error-modal-title"></h3>
+            </div>
+            <div class="modal-custom-body" id="error-modal-message"></div>
+            <div class="modal-custom-footer">
+                <button class="btn-primary" onclick="closeCustomModal('error-modal')">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirm-modal" class="modal-custom confirm">
+        <div class="modal-custom-content">
+            <div class="modal-custom-header">
+                <span class="modal-custom-icon"><i class="fas fa-question-circle"></i></span>
+                <h3 id="confirm-modal-title">Confirm Action</h3>
+            </div>
+            <div class="modal-custom-body" id="confirm-modal-message"></div>
+            <div class="modal-custom-footer">
+                <button class="btn-secondary" onclick="confirmModalCallback(false)">Cancel</button>
+                <button class="btn-danger" onclick="confirmModalCallback(true)">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

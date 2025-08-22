@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZeroTouch MicroPolicy - Instant Insurance Claims</title>
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/layout.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div id="app-wrapper">
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <h2>ZeroTouch</h2>
+                </div>
+                <div class="nav-links">
+                    <a class="btn-secondary" href="login.html">Login</a>
+                    <a class="btn-primary" href="signup.html">Sign Up</a>
+                </div>
+            </div>
+        </nav>
+
+        <main class="hero-section">
+            <div class="hero-content">
+                <h1 class="hero-title">Insurance Claims in <span class="text-gradient">Seconds</span></h1>
+                <p class="hero-subtitle">AI-powered micro-policies with instant payouts. No paperwork, no waiting, no hassle.</p>
+                
+                <div class="hero-features">
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3>Instant Claims</h3>
+                        <p>Claims processed in under 30 seconds</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔒</div>
+                        <h3>Blockchain Verified</h3>
+                        <p>Transparent, immutable claim records</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🎯</div>
+                        <h3>Micro-Policies</h3>
+                        <p>Pay only for what you need, when you need it</p>
+                    </div>
+                </div>
+
+                <div class="hero-actions">
+                    <a class="btn-primary btn-large" href="signup.html">Get Started</a>
+                    <a class="btn-secondary btn-large" href="onboarding.html">See How It Works</a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+    </div>
+    <div id="toast-container" class="toast-container"></div>
+
+    <div id="success-modal" class="modal-custom success">
+        <div class="modal-custom-content">
+            <div class="modal-custom-header">
+                <span class="modal-custom-icon"><i class="fas fa-check-circle"></i></span>
+                <h3 id="success-modal-title"></h3>
+            </div>
+            <div class="modal-custom-body" id="success-modal-message"></div>
+            <div class="modal-custom-footer">
+                <button class="btn-primary" onclick="closeCustomModal('success-modal')">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="error-modal" class="modal-custom error">
+        <div class="modal-custom-content">
+            <div class="modal-custom-header">
+                <span class="modal-custom-icon"><i class="fas fa-times-circle"></i></span>
+                <h3 id="error-modal-title"></h3>
+            </div>
+            <div class="modal-custom-body" id="error-modal-message"></div>
+            <div class="modal-custom-footer">
+                <button class="btn-primary" onclick="closeCustomModal('error-modal')">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirm-modal" class="modal-custom confirm">
+        <div class="modal-custom-content">
+            <div class="modal-custom-header">
+                <span class="modal-custom-icon"><i class="fas fa-question-circle"></i></span>
+                <h3 id="confirm-modal-title">Confirm Action</h3>
+            </div>
+            <div class="modal-custom-body" id="confirm-modal-message"></div>
+            <div class="modal-custom-footer">
+                <button class="btn-secondary" onclick="confirmModalCallback(false)">Cancel</button>
+                <button class="btn-danger" onclick="confirmModalCallback(true)">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

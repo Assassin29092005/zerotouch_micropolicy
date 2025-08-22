@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Policies - ZeroTouch MicroPolicy</title>
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/layout.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div id="app-wrapper">
+        <nav class="dashboard-nav">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <h2>ZeroTouch</h2>
+                </div>
+                <div class="nav-links">
+                    <a class="btn-secondary" href="dashboard.html">Back to Dashboard</a>
+                </div>
+            </div>
+        </nav>
+
+        <main class="policies-main">
+            <div class="policies-header">
+                <h1>Available Policies</h1>
+                <p>Choose the perfect micro-policy for your needs</p>
+            </div>
+
+            <div id="policies-grid" class="policies-grid">
+                <!-- Policies will be loaded here -->
+            </div>
+        </main>
+    </div>
+
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+    </div>
+    <div id="toast-container" class="toast-container"></div>
+
+    <div id="success-modal" class="modal-custom success">
+        <div class="modal-custom-content">
+            <div class="modal-custom-header">
+                <span class="modal-custom-icon"><i class="fas fa-check-circle"></i></span>
+                <h3 id="success-modal-title"></h3>
+            </div>
+            <div class="modal-custom-body" id="success-modal-message"></div>
+            <div class="modal-custom-footer">
+                <button class="btn-primary" onclick="closeCustomModal('success-modal')">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="error-modal" class="modal-custom error">
+        <div class="modal-custom-content">
+            <div class="modal-custom-header">
+                <span class="modal-custom-icon"><i class="fas fa-times-circle"></i></span>
+                <h3 id="error-modal-title"></h3>
+            </div>
+            <div class="modal-custom-body" id="error-modal-message"></div>
+            <div class="modal-custom-footer">
+                <button class="btn-primary" onclick="closeCustomModal('error-modal')">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirm-modal" class="modal-custom confirm">
+        <div class="modal-custom-content">
+            <div class="modal-custom-header">
+                <span class="modal-custom-icon"><i class="fas fa-question-circle"></i></span>
+                <h3 id="confirm-modal-title">Confirm Action</h3>
+            </div>
+            <div class="modal-custom-body" id="confirm-modal-message"></div>
+            <div class="modal-custom-footer">
+                <button class="btn-secondary" onclick="confirmModalCallback(false)">Cancel</button>
+                <button class="btn-danger" onclick="confirmModalCallback(true)">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

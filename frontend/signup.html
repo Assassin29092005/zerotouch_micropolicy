@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - ZeroTouch MicroPolicy</title>
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/layout.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div id="app-wrapper" class="auth-page">
+        <div class="auth-container">
+            <div class="auth-card">
+                <h2>Create Account</h2>
+                <p>Join ZeroTouch for instant insurance</p>
+                
+                <form id="signup-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="signup-username">Username</label>
+                        <input type="text" id="signup-username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-email">Email</label>
+                        <input type="email" id="signup-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password">Password</label>
+                        <div class="password-input-container">
+                            <input type="password" id="signup-password" required>
+                            <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('signup-password', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary btn-full">Create Account</button>
+                </form>
+                
+                <p class="auth-switch">
+                    Already have an account? 
+                    <a href="login.html">Sign in</a>
+                </p>
+            </div>
+            <a href="index.html" class="btn-secondary mt-4">Back to Home</a>
+        </div>
+    </div>
+
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+    </div>
+    <div id="toast-container" class="toast-container"></div>
+
+    <div id="success-modal" class="modal-custom success">
+        <div class="modal-custom-content">
+            <div class="modal-custom-header">
+                <span class="modal-custom-icon"><i class="fas fa-check-circle"></i></span>
+                <h3 id="success-modal-title"></h3>
+            </div>
+            <div class="modal-custom-body" id="success-modal-message"></div>
+            <div class="modal-custom-footer">
+                <button class="btn-primary" onclick="closeCustomModal('success-modal')">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="error-modal" class="modal-custom error">
+        <div class="modal-custom-content">
+            <div class="modal-custom-header">
+                <span class="modal-custom-icon"><i class="fas fa-times-circle"></i></span>
+                <h3 id="error-modal-title"></h3>
+            </div>
+            <div class="modal-custom-body" id="error-modal-message"></div>
+            <div class="modal-custom-footer">
+                <button class="btn-primary" onclick="closeCustomModal('error-modal')">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirm-modal" class="modal-custom confirm">
+        <div class="modal-custom-content">
+            <div class="modal-custom-header">
+                <span class="modal-custom-icon"><i class="fas fa-question-circle"></i></span>
+                <h3 id="confirm-modal-title">Confirm Action</h3>
+            </div>
+            <div class="modal-custom-body" id="confirm-modal-message"></div>
+            <div class="modal-custom-footer">
+                <button class="btn-secondary" onclick="confirmModalCallback(false)">Cancel</button>
+                <button class="btn-danger" onclick="confirmModalCallback(true)">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

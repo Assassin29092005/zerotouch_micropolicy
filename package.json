@@ -1,0 +1,13 @@
+{
+  "name": "zerotouch-micropolicy",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "npx serve frontend/",
+    "deploy-functions": "npx supabase functions deploy admin --no-verify-jwt --project-ref YOUR_SUPABASE_PROJECT_ID"
+  },
+  "devDependencies": {
+    "serve": "^10.0.2",
+    "supabase": "^1.182.1"
+  }
+}
