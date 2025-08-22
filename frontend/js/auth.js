@@ -47,6 +47,7 @@ class AuthManager {
       showLoading()
 
       if (isAdmin) {
+        // This part remains unchanged as it is a secure backend call
         const response = await fetch('/api/admin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -62,24 +63,14 @@ class AuthManager {
         }
         showSuccessPopup("Admin account created successfully! Please check your email to verify.", "Account Created");
       } else {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          // Corrected: Redirects the user to the login page after email verification
-          options: { emailRedirectTo: window.location.origin + "/login.html" }
-        })
+        // Corrected: Use the atomic database function for regular user signup
+        const { error } = await supabase.rpc('sign_up_and_create_profile', {
+            email,
+            password,
+            username
+        });
         if (error) throw error;
 
-        const { error: profileError } = await supabase.from("users").insert([
-          {
-            id: data.user.id,
-            username: username,
-            email: email,
-            wallet_balance: APP_CONFIG.DEFAULT_WALLET_BALANCE,
-            is_admin: false,
-          }
-        ]);
-        if (profileError) throw profileError;
         showSuccessPopup("Account created successfully! Please check your email to verify.", "Account Created");
       }
       window.location.href = "login.html";
@@ -89,6 +80,7 @@ class AuthManager {
       hideLoading();
     }
   }
+
 
   async signIn(email, password) {
     try {
