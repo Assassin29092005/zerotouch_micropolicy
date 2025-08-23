@@ -26,11 +26,11 @@ const urlsToCache = [
   "/js/user-settings.js",
   "/js/utils.js",
   "/manifest.json",
+  "/mov_bbb.mp4", // CORRECTED: Added the local video file to the cache
   "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
   "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css",
   "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap",
-  // Add any other static assets like images, videos if they are used directly
-  "https://www.w3schools.com/html/mov_bbb.mp4" // Example video for onboarding
+  "/placeholder.svg"
 ]
 self.addEventListener("install", (event) => {
   event.waitUntil(
