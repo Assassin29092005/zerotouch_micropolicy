@@ -106,7 +106,7 @@ class AuthManager {
   }
 
   isAuthenticated() {
-    return this.isAuthenticated;
+    return this._isAuthenticated;
   }
 
   isAdmin() {
