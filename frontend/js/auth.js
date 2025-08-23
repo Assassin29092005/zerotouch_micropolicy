@@ -7,26 +7,26 @@ import { APP_CONFIG } from "./config.js"
 class AuthManager {
   constructor() {
     this.currentUser = null
-    this.isAuthenticated = false
+    this._isAuthenticated = false // Corrected: Renamed internal property to avoid conflict
   }
 
   async init() {
     const { data: { session } } = await supabase.auth.getSession()
     if (session) {
       this.currentUser = session.user
-      this.isAuthenticated = true
+      this._isAuthenticated = true
       await this.loadUserProfile()
     }
     
     supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN") {
         this.currentUser = session.user
-        this.isAuthenticated = true
+        this._isAuthenticated = true
         await this.loadUserProfile()
         window.location.href = this.currentUser?.profile?.is_admin ? "admin-dashboard.html" : "dashboard.html"
       } else if (event === "SIGNED_OUT") {
         this.currentUser = null
-        this.isAuthenticated = false
+        this._isAuthenticated = false
         window.location.href = "index.html"
       }
     })
@@ -47,7 +47,6 @@ class AuthManager {
       showLoading()
 
       if (isAdmin) {
-        // This part remains unchanged as it is a secure backend call
         const response = await fetch('/api/admin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -63,14 +62,23 @@ class AuthManager {
         }
         showSuccessPopup("Admin account created successfully! Please check your email to verify.", "Account Created");
       } else {
-        // Corrected: Use the atomic database function for regular user signup
-        const { error } = await supabase.rpc('sign_up_and_create_profile', {
-            email,
-            password,
-            username
-        });
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: window.location.origin + "/login.html" }
+        })
         if (error) throw error;
 
+        const { error: profileError } = await supabase.from("users").insert([
+          {
+            id: data.user.id,
+            username: username,
+            email: email,
+            wallet_balance: APP_CONFIG.DEFAULT_WALLET_BALANCE,
+            is_admin: false,
+          }
+        ]);
+        if (profileError) throw profileError;
         showSuccessPopup("Account created successfully! Please check your email to verify.", "Account Created");
       }
       window.location.href = "login.html";
@@ -80,7 +88,6 @@ class AuthManager {
       hideLoading();
     }
   }
-
 
   async signIn(email, password) {
     try {
@@ -106,7 +113,7 @@ class AuthManager {
   }
 
   isAuthenticated() {
-    return this._isAuthenticated;
+    return this._isAuthenticated; // Corrected: Return the new property
   }
 
   isAdmin() {
