@@ -7,7 +7,10 @@
     "deploy-functions": "npx supabase functions deploy admin --no-verify-jwt --project-ref YOUR_SUPABASE_PROJECT_ID"
   },
   "devDependencies": {
-    "serve": "^10.0.2",
+    "serve": "^14.2.4",
     "supabase": "^1.182.1"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1"
   }
 }
