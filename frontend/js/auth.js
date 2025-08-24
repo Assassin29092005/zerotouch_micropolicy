@@ -7,26 +7,26 @@ import { APP_CONFIG } from "./config.js"
 class AuthManager {
   constructor() {
     this.currentUser = null
-    this.isAuthenticated = false
+    this._isAuthenticated = false // Renamed internal property
   }
 
   async init() {
     const { data: { session } } = await supabase.auth.getSession()
     if (session) {
       this.currentUser = session.user
-      this.isAuthenticated = true
+      this._isAuthenticated = true // Use new property name
       await this.loadUserProfile()
     }
     
     supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN") {
         this.currentUser = session.user
-        this.isAuthenticated = true
+        this._isAuthenticated = true // Use new property name
         await this.loadUserProfile()
         window.location.href = this.currentUser?.profile?.is_admin ? "admin-dashboard.html" : "dashboard.html"
       } else if (event === "SIGNED_OUT") {
         this.currentUser = null
-        this.isAuthenticated = false
+        this._isAuthenticated = false // Use new property name
         window.location.href = "index.html"
       }
     })
@@ -62,7 +62,6 @@ class AuthManager {
         }
         showSuccessPopup("Admin account created successfully! Please check your email to verify.", "Account Created");
       } else {
-        // CORRECTED: This part of the code now correctly calls the atomic RPC function
         const { error } = await supabase.rpc('sign_up_and_create_profile', {
             email,
             password,
@@ -104,7 +103,7 @@ class AuthManager {
   }
 
   isAuthenticated() {
-    return this.isAuthenticated;
+    return this._isAuthenticated; // Returns the new property
   }
 
   isAdmin() {
