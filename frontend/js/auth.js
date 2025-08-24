@@ -4,29 +4,32 @@ import { supabase } from "./supabaseClient.js"
 import { showLoading, hideLoading, showSuccessPopup, showErrorPopup } from "./utils.js"
 import { APP_CONFIG } from "./config.js"
 
+// Define the full URL for the Edge Function
+const ADMIN_API_URL = "https://xoivmwfqgcbpeqcwxdal.supabase.co/functions/v1/admin"
+
 class AuthManager {
   constructor() {
     this.currentUser = null
-    this._isAuthenticated = false // Renamed internal property
+    this.isAuthenticated = false
   }
 
   async init() {
     const { data: { session } } = await supabase.auth.getSession()
     if (session) {
       this.currentUser = session.user
-      this._isAuthenticated = true // Use new property name
+      this.isAuthenticated = true
       await this.loadUserProfile()
     }
     
     supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN") {
         this.currentUser = session.user
-        this._isAuthenticated = true // Use new property name
+        this.isAuthenticated = true
         await this.loadUserProfile()
         window.location.href = this.currentUser?.profile?.is_admin ? "admin-dashboard.html" : "dashboard.html"
       } else if (event === "SIGNED_OUT") {
         this.currentUser = null
-        this._isAuthenticated = false // Use new property name
+        this.isAuthenticated = false
         window.location.href = "index.html"
       }
     })
@@ -47,7 +50,8 @@ class AuthManager {
       showLoading()
 
       if (isAdmin) {
-        const response = await fetch('/api/admin', {
+        // CORRECTED: The fetch call now uses the full, direct URL
+        const response = await fetch(ADMIN_API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -103,7 +107,7 @@ class AuthManager {
   }
 
   isAuthenticated() {
-    return this._isAuthenticated; // Returns the new property
+    return this.isAuthenticated;
   }
 
   isAdmin() {
