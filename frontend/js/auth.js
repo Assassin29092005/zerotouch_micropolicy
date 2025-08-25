@@ -10,26 +10,26 @@ const ADMIN_API_URL = "https://xoivmwfqgcbpeqcwxdal.supabase.co/functions/v1/adm
 class AuthManager {
   constructor() {
     this.currentUser = null
-    this.isAuthenticated = false
+    this._isAuthenticated = false
   }
 
   async init() {
     const { data: { session } } = await supabase.auth.getSession()
     if (session) {
       this.currentUser = session.user
-      this.isAuthenticated = true
+      this._isAuthenticated = true
       await this.loadUserProfile()
     }
     
     supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN") {
         this.currentUser = session.user
-        this.isAuthenticated = true
+        this._isAuthenticated = true
         await this.loadUserProfile()
         window.location.href = this.currentUser?.profile?.is_admin ? "admin-dashboard.html" : "dashboard.html"
       } else if (event === "SIGNED_OUT") {
         this.currentUser = null
-        this.isAuthenticated = false
+        this._isAuthenticated = false
         window.location.href = "index.html"
       }
     })
@@ -107,7 +107,7 @@ class AuthManager {
   }
 
   isAuthenticated() {
-    return this.isAuthenticated;
+    return this._isAuthenticated;
   }
 
   isAdmin() {
