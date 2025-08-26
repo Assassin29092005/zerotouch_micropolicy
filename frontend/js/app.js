@@ -24,6 +24,7 @@ function showPolicies() { window.location.href = "policies.html" }
 function showOnboarding() { window.location.href = "onboarding.html" }
 function showUserSettings() { window.location.href = "user-settings.html" }
 function logout() { authManager.signOut() }
+finction signInWithGoogle() { authManager.signInWithGoogle() }
 
 // --- Password Visibility Toggle Function ---
 function togglePasswordVisibility(inputId, buttonElement) {
@@ -117,6 +118,7 @@ window.showPolicies = showPolicies
 window.showOnboarding = showOnboarding
 window.showUserSettings = showUserSettings
 window.logout = logout
+window.signInWithGoogle = signInWithGoogle
 window.togglePasswordVisibility = togglePasswordVisibility
 window.closeCustomModal = closeCustomModal
 window.confirmModalCallback = confirmModalCallback
