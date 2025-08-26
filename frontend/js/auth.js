@@ -96,6 +96,22 @@ class AuthManager {
     }
   }
 
+  async signInWithGoogle() {
+    try {
+      showLoading();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+      });
+      if (error) throw error;
+      // The browser will redirect the user to Google for sign-in.
+      // The onAuthStateChange listener will handle the redirect back to the dashboard.
+    } catch (error) {
+      showErrorPopup(error.message, "Google Sign-in Failed");
+    } finally {
+      hideLoading();
+    }
+  }
+
   async signOut() {
     try {
       const { error } = await supabase.auth.signOut();
